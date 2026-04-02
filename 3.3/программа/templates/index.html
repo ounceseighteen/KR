@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>МЕДКЛИНИКА.АРМ-2025 — Тест-менеджер</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Onest:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #0d1117;
+  --bg2:       #161b22;
+  --bg3:       #21262d;
+  --border:    #30363d;
+  --text:      #e6edf3;
+  --muted:     #7d8590;
+  --accent:    #2ea043;
+  --blue:      #388bfd;
+  --red:       #f85149;
+  --yellow:    #d29922;
+  --purple:    #a371f7;
+  --orange:    #f0883e;
+  --teal:      #39d353;
+
+  --pass:      #1a7f37;
+  --pass-bg:   #0d2a17;
+  --pass-text: #3fb950;
+  --fail:      #b91c1c;
+  --fail-bg:   #2d1010;
+  --fail-text: #f85149;
+  --block:     #7d4f00;
+  --block-bg:  #2d1f00;
+  --block-text:#d29922;
+  --skip-bg:   #1c2330;
+  --skip-text: #7d8590;
+  --nr-bg:     #1c2330;
+  --nr-text:   #7d8590;
+
+  --radius: 8px;
+  --font: 'Onest', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Layout ── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.logo {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.logo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0d2a17, #0d1f2d);
+  border: 1px solid #2ea04344;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+.logo-dot {
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.logo-text { font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 700; letter-spacing:.5px; }
+.logo-sub  { font-size: 11px; color: var(--muted); }
+
+.nav-section { padding: 12px 8px 4px; }
+.nav-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 6px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all .15s;
+  font-size: 13px;
+  border: 1px solid transparent;
+}
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: #1a7f3720; color: var(--accent); border-color: #2ea04322; }
+.nav-item .icon { font-size: 14px; width: 16px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--bg3);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.nav-item.active .nav-badge { background: #2ea04330; color: var(--accent); }
+
+/* ── Main ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── Topbar ── */
+.topbar {
+  height: 52px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.topbar-title { font-weight: 600; font-size: 15px; }
+.topbar-title span { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
+
+.search-box {
+  margin-left: auto;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  width: 220px;
+}
+.search-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 6px 0;
+  width: 100%;
+}
+.search-box .s-icon { color: var(--muted); font-size: 13px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all .15s;
+  font-weight: 500;
+}
+.btn-primary { background: #238636; border-color: #2ea043; color: #fff; }
+.btn-primary:hover { background: #2ea043; }
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+.btn-danger { background: transparent; border-color: #f8514940; color: var(--red); }
+.btn-danger:hover { background: var(--fail-bg); }
+
+/* ── Content area ── */
+.content { flex: 1; overflow-y: auto; }
+
+/* ── Filters bar ── */
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  flex-wrap: wrap;
+}
+.filter-chip {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: var(--bg3);
+  color: var(--muted);
+  transition: all .15s;
+  font-weight: 500;
+}
+.filter-chip:hover { color: var(--text); border-color: var(--border); }
+.filter-chip.active { color: var(--text); }
+
+.fc-all.active    { background: #21262d; border-color: var(--border); color: var(--text); }
+.fc-passed.active { background: var(--pass-bg); border-color: var(--pass-text)44; color: var(--pass-text); }
+.fc-failed.active { background: var(--fail-bg); border-color: var(--fail-text)44; color: var(--fail-text); }
+.fc-blocked.active{ background: var(--block-bg);border-color: var(--block-text)44;color: var(--block-text);}
+.fc-skipped.active{ background: var(--skip-bg); border-color: #7d859044; color: var(--skip-text); }
+.fc-not_run.active{ background: var(--nr-bg);   border-color: #7d859044; color: var(--nr-text); }
+
+.filter-sep { width: 1px; height: 20px; background: var(--border); }
+
+/* ── Stats mini row ── */
+.mini-stats {
+  display: flex;
+  gap: 0;
+  padding: 0 20px 0;
+  margin-bottom: 0;
+}
+.mini-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px 10px 0;
+  border-right: 1px solid var(--border);
+  margin-right: 16px;
+}
+.mini-stat:last-child { border-right: none; }
+.mini-stat-val { font-family: var(--mono); font-size: 20px; font-weight: 700; }
+.mini-stat-label { font-size: 11px; color: var(--muted); }
+.c-pass   { color: var(--pass-text); }
+.c-fail   { color: var(--fail-text); }
+.c-block  { color: var(--block-text); }
+.c-muted  { color: var(--muted); }
+.c-blue   { color: var(--blue); }
+
+/* ── Progress bar ── */
+.progress-wrap {
+  padding: 8px 20px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+}
+.progress-seg { height: 100%; transition: width .4s ease; }
+.seg-pass   { background: var(--pass-text); }
+.seg-fail   { background: var(--fail-text); }
+.seg-block  { background: var(--block-text); }
+.seg-skip   { background: #444c56; }
+.progress-pct { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+/* ── TC list ── */
+.tc-list { padding: 0 20px 20px; }
+.tc-list-header {
+  display: grid;
+  grid-template-columns: 110px 1fr 100px 90px 90px 110px;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.tc-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 100px 90px 90px 110px;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background .12s;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+}
+.tc-row:hover { background: var(--bg2); border-color: var(--border); }
+.tc-row.selected { background: #1a7f3712; border-color: #2ea04330; }
+
+.tc-id { font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 600; }
+.tc-name { font-size: 13px; font-weight: 500; }
+.tc-module {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg3);
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.b-critical { background: #3d0d0d; color: var(--fail-text); border: 1px solid #f8514930; }
+.b-high     { background: #2d1a00; color: var(--orange); border: 1px solid #f0883e30; }
+.b-medium   { background: #1a1a00; color: var(--yellow); border: 1px solid #d2992230; }
+.b-low      { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.s-passed   { background: var(--pass-bg);  color: var(--pass-text);  border: 1px solid #3fb95030; }
+.s-failed   { background: var(--fail-bg);  color: var(--fail-text);  border: 1px solid #f8514930; }
+.s-blocked  { background: var(--block-bg); color: var(--block-text); border: 1px solid #d2992230; }
+.s-skipped  { background: var(--skip-bg);  color: var(--skip-text);  border: 1px solid #7d859030; }
+.s-not_run  { background: var(--nr-bg);    color: var(--nr-text);    border: 1px solid #7d859020; }
+.s-dot { width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0; }
+
+/* ── Detail panel ── */
+.detail-panel {
+  width: 420px;
+  min-width: 420px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width .2s;
+}
+.detail-panel.hidden { width: 0; min-width: 0; border: none; overflow: hidden; }
+
+.detail-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.detail-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px;
+  border-radius: 4px;
+}
+.detail-close:hover { color: var(--text); background: var(--bg3); }
+
+.detail-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+
+.detail-section { margin-bottom: 16px; }
+.detail-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.detail-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.detail-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c9d1d9;
+  background: var(--bg3);
+  border-radius: 6px;
+  padding: 10px 12px;
+  white-space: pre-line;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* ── Status selector ── */
+.status-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.status-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--muted);
+  transition: all .12s;
+  font-family: var(--font);
+}
+.status-btn:hover { color: var(--text); border-color: #7d8590; }
+.status-btn.active-passed  { background: var(--pass-bg);  color: var(--pass-text);  border-color: #3fb95050; }
+.status-btn.active-failed  { background: var(--fail-bg);  color: var(--fail-text);  border-color: #f8514950; }
+.status-btn.active-blocked { background: var(--block-bg); color: var(--block-text); border-color: #d2992250; }
+.status-btn.active-skipped { background: var(--skip-bg);  color: var(--skip-text);  border-color: #7d859050; }
+.status-btn.active-not_run { background: var(--nr-bg);    color: var(--nr-text);    border-color: #7d859030; }
+
+.detail-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 8px 10px;
+  resize: vertical;
+  margin-bottom: 8px;
+  outline: none;
+  transition: border .15s;
+}
+.detail-input:focus { border-color: var(--blue); }
+
+/* ── Dashboard view ── */
+.dashboard { padding: 24px; }
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+.dash-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.dash-card-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px; }
+.dash-big-num { font-family: var(--mono); font-size: 40px; font-weight: 700; }
+
+.module-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border)55;
+}
+.module-row:last-child { border: none; }
+.module-name { font-size: 13px; width: 140px; flex-shrink: 0; }
+.module-bar-wrap { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; display: flex; }
+.module-count { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 40px; text-align: right; }
+
+.prio-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+.prio-name { width: 90px; font-size: 13px; flex-shrink: 0; }
+.prio-total { font-family: var(--mono); font-size: 13px; margin-left: auto; color: var(--muted); }
+
+/* ── Empty state ── */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; opacity: .4; }
+.empty-text { font-size: 14px; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all .25s;
+  pointer-events: none;
+  z-index: 1000;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-icon { font-size: 16px; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444c56; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-badge">
+        <div class="logo-dot"></div>
+        <span class="logo-text">МЕДКЛИНИКА.АРМ</span>
+      </div>
+      <div class="logo-sub">Тест-менеджер v1.0</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Навигация</div>
+      <div class="nav-item active" id="nav-tests" onclick="switchView('tests')">
+        <span class="icon">🧪</span> Тест-кейсы
+        <span class="nav-badge" id="nb-total">40</span>
+      </div>
+      <div class="nav-item" id="nav-dash" onclick="switchView('dashboard')">
+        <span class="icon">📊</span> Дашборд
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Модули</div>
+      <div class="nav-item" id="nav-REG" onclick="filterModule('REG')">
+        <span class="icon">👤</span> Онлайн-запись
+        <span class="nav-badge" id="nb-REG">13</span>
+      </div>
+      <div class="nav-item" id="nav-SCH" onclick="filterModule('SCH')">
+        <span class="icon">📅</span> Расписание
+        <span class="nav-badge" id="nb-SCH">7</span>
+      </div>
+      <div class="nav-item" id="nav-MED" onclick="filterModule('MED')">
+        <span class="icon">🩺</span> Медкарты
+        <span class="nav-badge" id="nb-MED">7</span>
+      </div>
+      <div class="nav-item" id="nav-REP" onclick="filterModule('REP')">
+        <span class="icon">📈</span> Отчётность
+        <span class="nav-badge" id="nb-REP">5</span>
+      </div>
+      <div class="nav-item" id="nav-SEC" onclick="filterModule('SEC')">
+        <span class="icon">🔒</span> Безопасность
+        <span class="nav-badge" id="nb-SEC">6</span>
+      </div>
+      <div class="nav-item" id="nav-NFR" onclick="filterModule('NFR')">
+        <span class="icon">⚡</span> Нефункциональные
+        <span class="nav-badge" id="nb-NFR">7</span>
+      </div>
+    </div>
+
+    <div class="nav-section" style="margin-top:auto; border-top:1px solid var(--border); padding-top:12px;">
+      <div class="nav-label">Действия</div>
+      <div class="nav-item" onclick="resetAll()" style="color:var(--red)">
+        <span class="icon">🔄</span> Сбросить всё
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <div class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-title">Тест-кейсы <span id="topbar-sub">все модули</span></span>
+      <div class="search-box">
+        <span class="s-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Поиск по ID или названию…" oninput="onSearch()">
+      </div>
+    </div>
+
+    <!-- Tests view -->
+    <div id="view-tests" class="content" style="display:flex;flex-direction:column;">
+      <!-- Mini stats -->
+      <div class="mini-stats" id="mini-stats"></div>
+      <!-- Progress -->
+      <div class="progress-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+        <span class="progress-pct" id="progress-pct">0% пройдено</span>
+      </div>
+      <!-- Filters -->
+      <div class="filters" id="filters">
+        <span class="filter-chip fc-all active" onclick="filterStatus('')">Все</span>
+        <div class="filter-sep"></div>
+        <span class="filter-chip fc-passed"  onclick="filterStatus('passed')">✅ Пройден</span>
+        <span class="filter-chip fc-failed"  onclick="filterStatus('failed')">❌ Провален</span>
+        <span class="filter-chip fc-blocked" onclick="filterStatus('blocked')">🚫 Заблокирован</span>
+        <span class="filter-chip fc-skipped" onclick="filterStatus('skipped')">⏭ Пропущен</span>
+        <span class="filter-chip fc-not_run" onclick="filterStatus('not_run')">⭕ Не выполнен</span>
+      </div>
+      <!-- List -->
+      <div style="flex:1;overflow-y:auto;display:flex;">
+        <div style="flex:1;min-width:0;">
+          <div class="tc-list">
+            <div class="tc-list-header">
+              <div>ID</div>
+              <div>Название</div>
+              <div>Модуль</div>
+              <div>Приоритет</div>
+              <div>Тип</div>
+              <div>Статус</div>
+            </div>
+            <div id="tc-list-body"></div>
+          </div>
+        </div>
+        <!-- Detail panel -->
+        <div class="detail-panel hidden" id="detail-panel">
+          <div class="detail-header">
+            <div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:4px;" id="d-id"></div>
+              <div style="font-size:15px;font-weight:600;line-height:1.3;" id="d-name"></div>
+            </div>
+            <button class="detail-close" onclick="closeDetail()">✕</button>
+          </div>
+          <div class="detail-body">
+            <div class="detail-meta" id="d-meta"></div>
+
+            <div class="detail-section">
+              <div class="detail-section-title">Предусловие</div>
+              <div class="detail-text" id="d-pre"></div>
+            </div>
+            <div class="detail-section">
+              <div class="detail-section-title">Шаги выполнения</div>
+              <div class="detail-text" id="d-steps"></div>
+            </div>
+            <div class="detail-section">
+              <div class="detail-section-title">Ожидаемый результат</div>
+              <div class="detail-text" id="d-expected"></div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-section-title">Результат выполнения</div>
+              <div class="status-selector" id="d-status-btns"></div>
+            </div>
+
+            <div class="detail-section">
+              <div class="detail-section-title">ID дефекта (Jira)</div>
+              <input class="detail-input" id="d-defect" type="text" placeholder="Напр.: MED-1234">
+            </div>
+            <div class="detail-section">
+              <div class="detail-section-title">Примечание</div>
+              <textarea class="detail-input" id="d-note" rows="3" placeholder="Дополнительные наблюдения…"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" onclick="saveDetail()" style="flex:1;">💾 Сохранить</button>
+            </div>
+            <div style="margin-top:8px;font-size:11px;color:var(--muted);text-align:center;" id="d-updated"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard view -->
+    <div id="view-dashboard" class="content dashboard" style="display:none;">
+      <div class="dash-grid" id="dash-grid"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="dash-card">
+          <div class="dash-card-title">Прогресс по модулям</div>
+          <div id="module-progress"></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">Покрытие по приоритету</div>
+          <div id="prio-progress"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon"></span>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────
+let currentModule = '';
+let currentStatus = '';
+let currentSearch = '';
+let selectedId    = null;
+let currentView   = 'tests';
+let allTCs        = [];
+
+// ─── Boot ─────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadList();
+  updateStats();
+});
+
+// ─── Data loading ─────────────────────────────────────────────────────────
+async function loadList() {
+  const params = new URLSearchParams();
+  if (currentModule) params.set('module', currentModule);
+  if (currentStatus) params.set('status', currentStatus);
+  if (currentSearch) params.set('q', currentSearch);
+
+  const r = await fetch('/api/testcases?' + params);
+  allTCs = await r.json();
+  renderList(allTCs);
+  updateStats();
+}
+
+async function updateStats() {
+  const r = await fetch('/api/stats');
+  const s = await r.json();
+  renderMiniStats(s);
+  renderProgress(s);
+  if (currentView === 'dashboard') renderDashboard(s);
+}
+
+// ─── Render list ──────────────────────────────────────────────────────────
+function renderList(tcs) {
+  const body = document.getElementById('tc-list-body');
+  if (!tcs.length) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">Тест-кейсы не найдены</div></div>`;
+    return;
+  }
+  body.innerHTML = tcs.map(tc => `
+    <div class="tc-row ${selectedId===tc.id?'selected':''}" onclick="openDetail('${tc.id}')">
+      <div class="tc-id">${tc.id}</div>
+      <div class="tc-name">${tc.name}</div>
+      <div class="tc-module">${tc.module}</div>
+      <div>${priorityBadge(tc.priority)}</div>
+      <div style="font-size:11px;color:var(--muted);">${tc.type}</div>
+      <div>${statusBadge(tc.status)}</div>
+    </div>
+  `).join('');
+}
+
+function priorityBadge(p) {
+  const m = { 'Критический':'b-critical','Высокий':'b-high','Средний':'b-medium','Низкий':'b-low' };
+  const e = { 'Критический':'🔴','Высокий':'🟠','Средний':'🟡','Низкий':'⚪' };
+  return `<span class="badge ${m[p]||'b-low'}">${e[p]||''} ${p}</span>`;
+}
+
+function statusBadge(s) {
+  const labels = { passed:'Пройден', failed:'Провален', blocked:'Заблокирован', skipped:'Пропущен', not_run:'Не выполнен' };
+  return `<span class="status-badge s-${s}"><span class="s-dot"></span>${labels[s]||s}</span>`;
+}
+
+// ─── Mini stats ────────────────────────────────────────────────────────────
+function renderMiniStats(s) {
+  document.getElementById('mini-stats').innerHTML = `
+    <div class="mini-stat"><span class="mini-stat-val c-blue">${s.total}</span><div class="mini-stat-label">Всего</div></div>
+    <div class="mini-stat"><span class="mini-stat-val c-pass">${s.by_status.passed}</span><div class="mini-stat-label">Пройдено</div></div>
+    <div class="mini-stat"><span class="mini-stat-val c-fail">${s.by_status.failed}</span><div class="mini-stat-label">Провалено</div></div>
+    <div class="mini-stat"><span class="mini-stat-val c-block">${s.by_status.blocked}</span><div class="mini-stat-label">Блокировано</div></div>
+    <div class="mini-stat"><span class="mini-stat-val c-muted">${s.by_status.not_run}</span><div class="mini-stat-label">Не выполнено</div></div>
+    <div class="mini-stat"><span class="mini-stat-val ${s.pass_rate>=80?'c-pass':s.pass_rate>=50?'c-block':'c-fail'}">${s.pass_rate}%</span><div class="mini-stat-label">Pass rate</div></div>
+  `;
+  document.getElementById('nb-total').textContent = s.total;
+  for (const [code, data] of Object.entries(s.by_module)) {
+    const el = document.getElementById('nb-' + code);
+    if (el) el.textContent = data.total;
+  }
+}
+
+function renderProgress(s) {
+  const t = s.total;
+  const bar = document.getElementById('progress-bar');
+  const pct = document.getElementById('progress-pct');
+  bar.innerHTML = `
+    <div class="progress-seg seg-pass"  style="width:${s.by_status.passed /t*100}%"></div>
+    <div class="progress-seg seg-fail"  style="width:${s.by_status.failed /t*100}%"></div>
+    <div class="progress-seg seg-block" style="width:${s.by_status.blocked/t*100}%"></div>
+    <div class="progress-seg seg-skip"  style="width:${s.by_status.skipped/t*100}%"></div>
+  `;
+  pct.textContent = `${s.pass_rate}% пройдено (${s.executed}/${t})`;
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────
+function renderDashboard(s) {
+  const cards = [
+    { val: s.total,              label:'Всего тест-кейсов',   cls:'c-blue'  },
+    { val: s.by_status.passed,   label:'Пройдено',            cls:'c-pass'  },
+    { val: s.by_status.failed,   label:'Провалено',           cls:'c-fail'  },
+    { val: s.by_status.not_run,  label:'Не выполнено',        cls:'c-muted' },
+    { val: s.pass_rate + '%',    label:'Pass Rate',           cls: s.pass_rate>=80?'c-pass':s.pass_rate>=50?'c-block':'c-fail' },
+    { val: s.executed,           label:'Выполнено всего',     cls:'c-blue'  },
+  ];
+  document.getElementById('dash-grid').innerHTML = cards.map(c => `
+    <div class="dash-card">
+      <div class="dash-card-title">${c.label}</div>
+      <div class="dash-big-num ${c.cls}">${c.val}</div>
+    </div>
+  `).join('');
+
+  const modColors = { REG:'#388bfd',SCH:'#a371f7',MED:'#f0883e',REP:'#3fb950',SEC:'#f85149',NFR:'#d29922' };
+  document.getElementById('module-progress').innerHTML = Object.entries(s.by_module).map(([code, m]) => `
+    <div class="module-row">
+      <div class="module-name" style="color:${modColors[code]||'var(--text)'};font-size:12px;font-weight:600;">${m.name}</div>
+      <div class="module-bar-wrap">
+        <div class="progress-seg seg-pass"  style="width:${m.passed /m.total*100}%"></div>
+        <div class="progress-seg seg-fail"  style="width:${m.failed /m.total*100}%"></div>
+        <div class="progress-seg seg-block" style="width:${m.blocked/m.total*100}%"></div>
+      </div>
+      <div class="module-count">${m.passed}/${m.total}</div>
+    </div>
+  `).join('');
+
+  const prioOrder = ['Критический','Высокий','Средний','Низкий'];
+  document.getElementById('prio-progress').innerHTML = prioOrder
+    .filter(p => s.by_priority[p])
+    .map(p => {
+      const d = s.by_priority[p];
+      const pct = d.total > 0 ? Math.round(d.passed/d.total*100) : 0;
+      const cls = { 'Критический':'c-fail','Высокий':'c-block','Средний':'c-muted','Низкий':'c-muted' }[p];
+      return `
+        <div class="prio-row">
+          <div class="prio-name">${priorityBadge(p)}</div>
+          <div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:var(--pass-text);border-radius:3px;transition:width .4s;"></div>
+          </div>
+          <div class="prio-total">${d.passed}/${d.total}</div>
+        </div>
+      `;
+    }).join('');
+}
+
+// ─── Detail panel ─────────────────────────────────────────────────────────
+async function openDetail(id) {
+  selectedId = id;
+  const r = await fetch('/api/testcases/' + id);
+  const tc = await r.json();
+
+  document.getElementById('d-id').textContent = tc.id + ' · ' + tc.req;
+  document.getElementById('d-name').textContent = tc.name;
+  document.getElementById('d-meta').innerHTML = `
+    ${priorityBadge(tc.priority)}
+    <span class="badge" style="background:var(--bg3);color:var(--muted);border:1px solid var(--border);">${tc.type}</span>
+    <span class="badge" style="background:var(--bg3);color:var(--muted);border:1px solid var(--border);">${tc.module}</span>
+  `;
+  document.getElementById('d-pre').textContent = tc.precondition;
+  document.getElementById('d-steps').textContent = tc.steps;
+  document.getElementById('d-expected').textContent = tc.expected;
+  document.getElementById('d-defect').value = tc.defect || '';
+  document.getElementById('d-note').value   = tc.note || '';
+  document.getElementById('d-updated').textContent = tc.updated_at ? '🕐 ' + tc.updated_at : '';
+
+  const statuses = [
+    {k:'passed',  l:'✅ Пройден'},
+    {k:'failed',  l:'❌ Провален'},
+    {k:'blocked', l:'🚫 Заблокирован'},
+    {k:'skipped', l:'⏭ Пропущен'},
+    {k:'not_run', l:'⭕ Не выполнен'},
+  ];
+  document.getElementById('d-status-btns').innerHTML = statuses.map(s =>
+    `<button class="status-btn ${tc.status===s.k?'active-'+s.k:''}" onclick="setStatus('${s.k}')">${s.l}</button>`
+  ).join('');
+
+  document.getElementById('detail-panel').classList.remove('hidden');
+  renderList(allTCs); // refresh selected highlight
+}
+
+function setStatus(status) {
+  document.querySelectorAll('.status-btn').forEach(b => {
+    b.className = 'status-btn';
+    if (b.textContent.trim().includes(statusLabel(status)) || b.onclick.toString().includes(`'${status}'`)) {
+      b.className = 'status-btn active-' + status;
+    }
+  });
+  // store locally for save
+  document.getElementById('d-status-btns').dataset.selected = status;
+}
+
+function statusLabel(s) {
+  return {passed:'Пройден',failed:'Провален',blocked:'Заблокирован',skipped:'Пропущен',not_run:'Не выполнен'}[s];
+}
+
+async function saveDetail() {
+  const btns = document.getElementById('d-status-btns');
+  const active = btns.querySelector('[class*="active-"]');
+  const status = active ? active.className.split('active-')[1] : 'not_run';
+
+  await fetch('/api/testcases/' + selectedId + '/status', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      status,
+      defect: document.getElementById('d-defect').value,
+      note:   document.getElementById('d-note').value,
+    })
+  });
+
+  // Refresh
+  loadList();
+  openDetail(selectedId);
+  toast('💾 Сохранено', status);
+}
+
+function closeDetail() {
+  selectedId = null;
+  document.getElementById('detail-panel').classList.add('hidden');
+  renderList(allTCs);
+}
+
+// ─── Filters ──────────────────────────────────────────────────────────────
+function filterStatus(s) {
+  currentStatus = s;
+  document.querySelectorAll('.filter-chip').forEach(el => {
+    const cls = [...el.classList].find(c => c.startsWith('fc-'));
+    const key = cls ? cls.replace('fc-','') : '';
+    el.classList.toggle('active', key === (s||'all'));
+  });
+  loadList();
+}
+
+function filterModule(m) {
+  currentModule = currentModule === m ? '' : m;
+  document.querySelectorAll('[id^="nav-"]').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-tests').classList.add('active');
+  if (currentModule) document.getElementById('nav-' + m)?.classList.add('active');
+
+  const names = {REG:'Онлайн-запись',SCH:'Расписание',MED:'Медкарты',REP:'Отчётность',SEC:'Безопасность',NFR:'Нефункциональные'};
+  document.getElementById('topbar-sub').textContent = currentModule ? names[currentModule] : 'все модули';
+  switchView('tests');
+  loadList();
+}
+
+function onSearch() {
+  currentSearch = document.getElementById('search-input').value;
+  loadList();
+}
+
+// ─── View switching ────────────────────────────────────────────────────────
+function switchView(v) {
+  currentView = v;
+  document.getElementById('view-tests').style.display     = v==='tests'     ? 'flex' : 'none';
+  document.getElementById('view-dashboard').style.display = v==='dashboard' ? 'block': 'none';
+  document.getElementById('nav-tests').classList.toggle('active', v==='tests');
+  document.getElementById('nav-dash').classList.toggle('active',  v==='dashboard');
+  if (v === 'dashboard') updateStats();
+}
+
+// ─── Reset ────────────────────────────────────────────────────────────────
+async function resetAll() {
+  if (!confirm('Сбросить все статусы тест-кейсов?')) return;
+  await fetch('/api/reset', { method: 'POST' });
+  closeDetail();
+  loadList();
+  toast('🔄 Все статусы сброшены', 'reset');
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  el.style.borderColor = type==='passed'?'#3fb95050':type==='failed'?'#f8514950':'var(--border)';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
