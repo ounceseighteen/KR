@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}{{ ses['фильм'] }} — СИНЕМА{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>{{ ses['фильм'] }}</h1>
+    <p>{{ ses['жанр'] }} · {{ ses['год_выпуска'] }} · {{ ses['длительность_мин'] }} мин · {{ ses['возрастной_рейтинг'] }}</p>
+  </div>
+  <a href="{{ url_for('index') }}" class="btn btn--ghost">← Назад</a>
+</div>
+
+<div style="display:grid;grid-template-columns:340px 1fr;gap:1.5rem;align-items:start;">
+  <!-- Левая колонка — информация о сеансе -->
+  <div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--purple-glow);margin-bottom:1rem;">
+        Информация о сеансе
+      </div>
+      <div class="info-block">
+        <div class="info-row">
+          <span class="info-row__label">Зал</span>
+          <span class="info-row__value">{{ ses['зал'] }} <span style="color:var(--text-muted);font-size:.8rem;">({{ ses['тип_зала'] }})</span></span>
+        </div>
+        <div class="info-row">
+          <span class="info-row__label">Начало</span>
+          <span class="info-row__value" style="color:var(--purple-glow);font-weight:500;">{{ ses['начало'] }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row__label">Окончание</span>
+          <span class="info-row__value" style="color:var(--text-muted);">{{ ses['окончание'] }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row__label">Формат</span>
+          <span class="info-row__value"><span class="badge badge--format">{{ ses['формат'] }}</span></span>
+        </div>
+        <div class="info-row" style="margin-top:.5rem;">
+          <span class="info-row__label">Цена</span>
+          <span class="info-row__value" style="font-size:1.3rem;font-weight:700;color:var(--accent);">{{ "%.0f"|format(ses['цена_руб']) }} ₽</span>
+        </div>
+      </div>
+    </div>
+
+    {% if ses['описание'] %}
+    <div class="card">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--purple-glow);margin-bottom:.75rem;">
+        О фильме
+      </div>
+      <p style="font-size:.85rem;color:var(--text-secondary);line-height:1.6;">{{ ses['описание'] }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Правая колонка — выбор места -->
+  <div class="card">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:var(--text-primary);margin-bottom:1.25rem;">
+      Выберите место
+    </div>
+
+    {% if not session.client_id %}
+    <div class="flash flash--warning" style="margin-bottom:1.25rem;">
+      <span>Для покупки билета необходимо <a href="{{ url_for('login') }}" style="color:var(--yellow);font-weight:500;">войти</a> или <a href="{{ url_for('register') }}" style="color:var(--yellow);font-weight:500;">зарегистрироваться</a></span>
+    </div>
+    {% endif %}
+
+    <div class="seat-map__screen">ЭКРАН</div>
+
+    {% set seats_by_row = {} %}
+    {% for s in seats %}
+      {% if s['ряд'] not in seats_by_row %}
+        {% set _ = seats_by_row.update({s['ряд']: []}) %}
+      {% endif %}
+      {% set _ = seats_by_row[s['ряд']].append(s) %}
+    {% endfor %}
+
+    <div class="seat-map">
+      {% for row_num in seats_by_row.keys()|sort %}
+      <div class="seat-map__row">
+        <span class="seat-map__label">{{ row_num }}</span>
+        {% for s in seats_by_row[row_num] %}
+          {% if s['занято'] %}
+          <span class="seat-btn-d occupied" title="Занято">{{ s['номер_места'] }}</span>
+          {% elif session.client_id %}
+          <a href="{{ url_for('book', sid=ses['код_сеанса'], seat_id=s['код_места']) }}"
+             class="seat-btn-d {% if s['тип_места'] == 'VIP' %}vip{% endif %}"
+             title="Ряд {{ s['ряд'] }}, место {{ s['номер_места'] }} — {{ s['тип_места'] }}">
+            {{ s['номер_места'] }}
+          </a>
+          {% else %}
+          <span class="seat-btn-d {% if s['тип_места'] == 'VIP' %}vip{% endif %}"
+                style="cursor:not-allowed;opacity:.6;"
+                title="Войдите для выбора места">
+            {{ s['номер_места'] }}
+          </span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="seat-legend">
+      <span><span class="dot dot--free"></span>Свободно</span>
+      <span><span class="dot dot--occ"></span>Занято</span>
+      <span><span class="dot dot--vip"></span>VIP</span>
+    </div>
+
+    {% set free_count = seats | selectattr('занято', 'equalto', 0) | list | length %}
+    <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);
+                display:flex;align-items:center;justify-content:space-between;font-size:.82rem;">
+      <span style="color:var(--text-muted);">Свободных мест: <strong style="color:var(--green);">{{ free_count }}</strong></span>
+      <span style="color:var(--text-muted);">Нажмите на место для бронирования</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  @media(max-width:860px){
+    div[style*="grid-template-columns:340px"] { grid-template-columns: 1fr !important; }
+  }
+</style>
+{% endblock %}

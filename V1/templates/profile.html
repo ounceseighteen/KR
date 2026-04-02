@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Личный кабинет — СИНЕМА{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>Личный кабинет</h1>
+    <p>Ваши данные и история посещений</p>
+  </div>
+  <a href="{{ url_for('profile_edit') }}" class="btn btn--ghost">✏ Редактировать профиль</a>
+</div>
+
+<div class="profile-grid">
+
+  <!-- Левая колонка — данные клиента -->
+  <div style="display:flex;flex-direction:column;gap:1rem;">
+    <div class="card">
+      <div style="text-align:center;padding-bottom:1.25rem;margin-bottom:1.25rem;border-bottom:1px solid var(--border);">
+        <div style="font-size:2.8rem;margin-bottom:.5rem;">👤</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;">
+          {{ client['полное_имя'] }}
+        </div>
+        <div style="margin-top:.5rem;">
+          <span class="bonus-badge">⭐ {{ client['бонусные_баллы'] }} бонусных баллов</span>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-row">
+          <span class="info-row__label">Телефон</span>
+          <span class="info-row__value">{{ client['телефон'] or '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row__label">E-mail</span>
+          <span class="info-row__value">{{ client['электронная_почта'] or '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row__label">Клиент с</span>
+          <span class="info-row__value" style="color:var(--text-muted);">{{ client['дата_регистрации'] }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row__label">Билетов</span>
+          <span class="info-row__value" style="color:var(--purple-light);font-weight:500;">{{ tickets|length }}</span>
+        </div>
+        {% if tickets %}
+        <div class="info-row">
+          <span class="info-row__label">Потрачено</span>
+          <span class="info-row__value" style="color:var(--accent);font-weight:600;">
+            {{ "%.0f"|format(tickets|selectattr('статус','ne','отменён')|sum(attribute='цена_руб')) }} ₽
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card" style="padding:1rem 1.2rem;">
+      <a href="{{ url_for('change_password') }}"
+         style="display:flex;align-items:center;justify-content:space-between;
+                text-decoration:none;color:var(--text-secondary);font-size:.875rem;">
+        <span>🔒 Сменить пароль</span>
+        <span style="color:var(--text-muted);">→</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Правая колонка — история билетов -->
+  <div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600;
+                color:var(--text-primary);margin-bottom:1rem;">
+      История билетов
+    </div>
+
+    {% if tickets %}
+    <div style="display:flex;flex-direction:column;gap:.7rem;">
+      {% for t in tickets %}
+      <div class="card" style="padding:1rem 1.2rem;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:700;margin-bottom:.3rem;">
+              {{ t['фильм'] }}
+            </div>
+            <div style="font-size:.8rem;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:.75rem;">
+              <span>{{ t['начало'] }}</span>
+              <span>{{ t['зал'] }}</span>
+              <span>Ряд {{ t['ряд'] }}, место {{ t['номер_места'] }}</span>
+              <span style="text-transform:capitalize;">{{ t['тип_места'] }}</span>
+            </div>
+            {% if t['способ_оплаты'] %}
+            <div style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem;">
+              Оплата: {{ t['способ_оплаты'] }} · {{ t['дата_покупки'] }}
+            </div>
+            {% endif %}
+          </div>
+          <div style="display:flex;align-items:center;gap:.75rem;flex-shrink:0;">
+            <span style="font-weight:700;color:var(--accent);font-size:1rem;">
+              {{ "%.0f"|format(t['цена_руб']) }} ₽
+            </span>
+            <span class="badge badge--{{ t['статус'] }}">{{ t['статус'] }}</span>
+            {% if t['статус'] in ('забронирован', 'оплачен') %}
+            <form method="POST" action="{{ url_for('cancel_ticket', tid=t['код_билета']) }}"
+                  onsubmit="return confirm('Отменить билет на «{{ t['фильм'] }}»?')">
+              <button class="btn btn--danger btn--sm" type="submit">Отменить</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      <div class="empty__icon">🎟</div>
+      <p>У вас пока нет билетов</p>
+      <a href="{{ url_for('index') }}" class="btn btn--primary" style="margin-top:1rem;">
+        Выбрать сеанс
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

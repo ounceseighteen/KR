@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Расписание — СИНЕМА{% endblock %}
+{% block content %}
+{% set months = ['','января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
+
+<div class="hero" style="padding: 2.5rem 0 1.75rem;">
+  <h1>Расписание сеансов</h1>
+  <p>Выберите фильм и купите билет онлайн</p>
+</div>
+
+<!-- Фильтры -->
+<div class="filter-bar">
+  <form method="GET" action="{{ url_for('index') }}"
+        style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end;width:100%;">
+    <div class="form-group" style="flex:1;min-width:180px;">
+      <label>Жанр</label>
+      <select class="form-control" name="genre">
+        <option value="">Все жанры</option>
+        {% for g in genres %}
+        <option value="{{ g }}" {% if request.args.get('genre') == g %}selected{% endif %}>{{ g }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="min-width:140px;">
+      <label>Формат</label>
+      <select class="form-control" name="format">
+        <option value="">Все форматы</option>
+        {% for f in formats %}
+        <option value="{{ f }}" {% if request.args.get('format') == f %}selected{% endif %}>{{ f }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn--primary" type="submit">Найти</button>
+    {% if request.args.get('genre') or request.args.get('format') %}
+    <a href="{{ url_for('index') }}" class="btn btn--ghost">Сбросить</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if by_date %}
+  {% for date_str, sessions in by_date.items() %}
+  {% set parts = date_str.split('-') %}
+  <div class="day-block">
+    <div class="day-label">
+      {{ parts[2]|int }} {{ months[parts[1]|int] }} {{ parts[0] }}
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:.6rem;">
+      {% for s in sessions %}
+      <a href="{{ url_for('session_detail', sid=s['код_сеанса']) }}" class="session-card">
+        <div>
+          <div class="session-card__film">{{ s['фильм'] }}</div>
+          <div class="session-card__meta">
+            <span class="badge badge--genre">{{ s['жанр'] }}</span>
+            <span class="badge badge--age">{{ s['возрастной_рейтинг'] }}</span>
+            <span class="badge badge--format">{{ s['формат'] }}</span>
+            <span style="font-size:.75rem;color:var(--text-muted);">🕐 {{ s['длительность_мин'] }} мин</span>
+          </div>
+        </div>
+        <div class="session-card__right">
+          <div style="text-align:right;">
+            <div class="session-card__time">{{ s['начало'][11:16] }}</div>
+            <div style="font-size:.75rem;color:var(--text-muted);">{{ s['зал'] }}</div>
+          </div>
+          <div class="session-card__price">{{ "%.0f"|format(s['цена_руб']) }} ₽</div>
+          <div class="btn btn--primary btn--sm">Купить</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="empty">
+  <div class="empty__icon">🎞</div>
+  <p>Сеансов на ближайшие дни не найдено</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{% if action=='add' %}Добавить клиента{% else %}Редактировать клиента{% endif %} — Кинотеатр{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>{% if action=='add' %}Добавить клиента{% else %}Редактировать клиента{% endif %}</h1>
+  </div>
+  <a href="{{ url_for('clients') }}" class="btn btn--ghost">← Назад</a>
+</div>
+
+<div class="form-card">
+  <form method="POST">
+    <div class="form-group">
+      <label>Полное имя *</label>
+      <input class="form-control" name="полное_имя" required
+             value="{{ client['полное_имя'] if client else '' }}"
+             placeholder="Иванов Иван Иванович"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Телефон</label>
+        <input class="form-control" name="телефон"
+               value="{{ client['телефон'] if client else '' }}"
+               placeholder="+7-900-000-0000"/>
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input class="form-control" type="email" name="электронная_почта"
+               value="{{ client['электронная_почта'] if client else '' }}"
+               placeholder="email@example.com"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Бонусные баллы</label>
+      <input class="form-control" type="number" name="бонусные_баллы" min="0"
+             value="{{ client['бонусные_баллы'] if client else 0 }}"/>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn--primary" type="submit">
+        {% if action=='add' %}Добавить{% else %}Сохранить{% endif %}
+      </button>
+      <a href="{{ url_for('clients') }}" class="btn btn--ghost">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

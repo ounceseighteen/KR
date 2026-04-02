@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Билеты — Кинотеатр{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>Билеты</h1>
+    <p>Управление билетами и бронированиями</p>
+  </div>
+  {% if session.role in ('администратор','менеджер','кассир') %}
+  <a href="{{ url_for('ticket_sell') }}" class="btn btn--primary">+ Продать билет</a>
+  {% endif %}
+</div>
+
+<div class="filter-bar">
+  <form method="GET" style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end;width:100%;">
+    <div class="form-group">
+      <label>Поиск клиента</label>
+      <input class="form-control" name="q" value="{{ q }}" placeholder="Имя или телефон…"/>
+    </div>
+    <div class="form-group">
+      <label>Статус</label>
+      <select class="form-control" name="status">
+        <option value="">Все статусы</option>
+        {% for s in ['забронирован','оплачен','использован','отменён'] %}
+        <option value="{{ s }}" {% if status_f==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn--primary" type="submit">Найти</button>
+    {% if q or status_f %}<a href="{{ url_for('tickets') }}" class="btn btn--ghost">Сбросить</a>{% endif %}
+  </form>
+</div>
+
+{% if tickets %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead><tr>
+      <th>#</th><th>Фильм / Сеанс</th><th>Зал / Место</th>
+      <th>Клиент</th><th>Цена</th><th>Статус</th><th>Оплата</th><th>Действия</th>
+    </tr></thead>
+    <tbody>
+      {% for t in tickets %}
+      <tr>
+        <td style="color:var(--text-muted);font-size:.8rem;">{{ t['код_билета'] }}</td>
+        <td>
+          <strong>{{ t['фильм'] }}</strong><br>
+          <span style="font-size:.78rem;color:var(--text-muted);">{{ t['начало'] }}</span>
+        </td>
+        <td>
+          <span style="font-size:.82rem;">{{ t['зал'] }}</span><br>
+          <span style="font-size:.78rem;color:var(--text-secondary);">Ряд {{ t['ряд'] }}, место {{ t['номер_места'] }}</span>
+        </td>
+        <td style="font-size:.85rem;">
+          {% if t['клиент'] %}{{ t['клиент'] }}<br>
+          <span style="color:var(--text-muted);font-size:.75rem;">{{ t['телефон'] or '' }}</span>
+          {% else %}<span style="color:var(--text-muted);">—</span>{% endif %}
+        </td>
+        <td style="font-weight:600;color:var(--accent);">{{ "%.0f"|format(t['цена_руб']) }} ₽</td>
+        <td><span class="badge badge--{{ t['статус'] }}">{{ t['статус'] }}</span></td>
+        <td style="font-size:.82rem;color:var(--text-secondary);">{{ t['способ_оплаты'] or '—' }}</td>
+        <td>
+          <div class="actions">
+            <!-- Смена статуса -->
+            {% if session.role in ('администратор','менеджер','кассир') %}
+            <form method="POST" action="{{ url_for('ticket_status', tid=t['код_билета']) }}">
+              <select class="form-control" name="статус"
+                      style="padding:.25rem .5rem;font-size:.75rem;width:auto;"
+                      onchange="this.form.submit()">
+                {% for s in ['забронирован','оплачен','использован','отменён'] %}
+                <option value="{{ s }}" {% if t['статус']==s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </form>
+            {% endif %}
+            {% if session.role == 'администратор' %}
+            <form method="POST" action="{{ url_for('ticket_delete', tid=t['код_билета']) }}"
+                  onsubmit="return confirm('Удалить билет #' + {{ t['код_билета'] }} + '?')">
+              <button class="btn btn--danger btn--sm btn--icon" type="submit">✕</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty"><div class="empty__icon">🎟</div><p>Билеты не найдены</p></div>
+{% endif %}
+{% endblock %}

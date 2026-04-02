@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Расписание — Кинотеатр{% endblock %}
+{% block content %}
+{% set months = ['','января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
+
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>Расписание сеансов</h1>
+    <p>Ближайшие 7 дней</p>
+  </div>
+  {% if session.role in ('администратор','менеджер') %}
+  <a href="{{ url_for('session_add') }}" class="btn btn--primary">+ Добавить сеанс</a>
+  {% endif %}
+</div>
+
+<!-- Фильтры -->
+<div class="filter-bar">
+  <form method="GET" style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end;width:100%;">
+    <div class="form-group">
+      <label>Дата (ДД.ММ.ГГГГ)</label>
+      <input class="form-control" name="date" value="{{ date_f }}" placeholder="26.03.2026" style="width:150px;"/>
+    </div>
+    <div class="form-group">
+      <label>Жанр</label>
+      <select class="form-control" name="genre">
+        <option value="">Все жанры</option>
+        {% for g in genres %}<option value="{{ g }}" {% if genre_f==g %}selected{% endif %}>{{ g }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Формат</label>
+      <select class="form-control" name="format">
+        <option value="">Все форматы</option>
+        {% for f in formats %}<option value="{{ f }}" {% if fmt_f==f %}selected{% endif %}>{{ f }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="btn btn--primary" type="submit">Применить</button>
+    {% if date_f or genre_f or fmt_f %}
+    <a href="{{ url_for('schedule') }}" class="btn btn--ghost">Сбросить</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if by_date %}
+  {% for date_str, sessions in by_date.items() %}
+  {% set parts = date_str.split('.') %}
+  <div class="day-block">
+    <div class="day-label">
+      {{ parts[0] }} {{ months[parts[1]|int] }} {{ parts[2] }}
+      {% if date_str == now_str %}<span class="today-mark">сегодня</span>{% endif %}
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>Фильм</th><th>Зал</th><th>Начало</th><th>Конец</th>
+          <th>Формат</th><th>Длит.</th><th>Цена</th>
+          {% if session.role in ('администратор','менеджер') %}<th>Действия</th>{% endif %}
+        </tr></thead>
+        <tbody>
+          {% for s in sessions %}
+          <tr>
+            <td>
+              <strong>{{ s['фильм'] }}</strong><br>
+              <span class="badge badge--genre" style="margin-top:.2rem;font-size:.68rem;">{{ s['жанр'] }}</span>
+              <span class="badge badge--age" style="font-size:.68rem;">{{ s['возрастной_рейтинг'] }}</span>
+            </td>
+            <td style="color:var(--text-secondary);font-size:.85rem;">{{ s['зал'] }}</td>
+            <td style="color:var(--purple-glow);font-weight:500;font-variant-numeric:tabular-nums;">{{ s['начало'][11:] }}</td>
+            <td style="color:var(--text-muted);font-variant-numeric:tabular-nums;">{{ s['окончание'][11:] }}</td>
+            <td><span class="badge badge--format">{{ s['формат'] }}</span></td>
+            <td style="color:var(--text-muted);font-size:.82rem;">{{ s['длительность_мин'] }} мин</td>
+            <td style="font-weight:600;color:var(--accent);">{{ "%.0f"|format(s['цена_руб']) }} ₽</td>
+            {% if session.role in ('администратор','менеджер') %}
+            <td>
+              <div class="actions">
+                <a href="{{ url_for('session_edit', sid=s['код_сеанса']) }}" class="btn btn--ghost btn--sm">✏</a>
+                {% if session.role == 'администратор' %}
+                <form method="POST" action="{{ url_for('session_delete', sid=s['код_сеанса']) }}"
+                      onsubmit="return confirm('Удалить этот сеанс?')">
+                  <button class="btn btn--danger btn--sm" type="submit">✕</button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="empty"><div class="empty__icon">📅</div><p>Сеансов не найдено</p></div>
+{% endif %}
+{% endblock %}

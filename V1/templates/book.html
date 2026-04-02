@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Оформление билета — СИНЕМА{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>Оформление билета</h1>
+    <p>Проверьте данные и выберите способ оплаты</p>
+  </div>
+  <a href="{{ url_for('session_detail', sid=ses['код_сеанса']) }}" class="btn btn--ghost">← Назад</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem;align-items:start;">
+
+  <!-- Форма -->
+  <div class="form-card" style="max-width:100%;">
+    <form method="POST">
+
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:600;
+                  color:var(--purple-glow);margin-bottom:1rem;">
+        Действие
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem;">
+        <label style="cursor:pointer;">
+          <input type="radio" name="действие" value="купить" checked style="display:none;" id="r-buy"/>
+          <div class="action-card" id="card-buy"
+               style="border:2px solid var(--purple-mid);border-radius:var(--radius);padding:1rem;text-align:center;
+                      background:var(--accent-soft);transition:border-color .2s,background .2s;">
+            <div style="font-size:1.4rem;margin-bottom:.3rem;">🎟</div>
+            <div style="font-weight:600;font-size:.9rem;color:var(--text-primary);">Купить</div>
+            <div style="font-size:.75rem;color:var(--text-secondary);margin-top:.2rem;">Оплата сейчас</div>
+          </div>
+        </label>
+        <label style="cursor:pointer;">
+          <input type="radio" name="действие" value="забронировать" style="display:none;" id="r-book"/>
+          <div class="action-card" id="card-book"
+               style="border:2px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;
+                      background:transparent;transition:border-color .2s,background .2s;">
+            <div style="font-size:1.4rem;margin-bottom:.3rem;">📋</div>
+            <div style="font-weight:600;font-size:.9rem;color:var(--text-primary);">Забронировать</div>
+            <div style="font-size:.75rem;color:var(--text-secondary);margin-top:.2rem;">Оплата на месте</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Способ оплаты -->
+      <div class="form-group" id="payment-group">
+        <label>Способ оплаты *</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;">
+          {% for method, icon in [('наличные','💵'),('карта','💳'),('онлайн','🌐')] %}
+          <label style="cursor:pointer;">
+            <input type="radio" name="способ_оплаты" value="{{ method }}"
+                   {% if method == 'карта' %}checked{% endif %}
+                   style="display:none;" class="pay-radio"/>
+            <div class="pay-option"
+                 style="border:1px solid var(--border);border-radius:var(--radius);padding:.75rem;
+                        text-align:center;transition:border-color .2s,background .2s;
+                        {% if method == 'карта' %}border-color:var(--purple-light);background:var(--accent-soft);{% endif %}">
+              <div style="font-size:1.2rem;margin-bottom:.25rem;">{{ icon }}</div>
+              <div style="font-size:.8rem;color:var(--text-secondary);text-transform:capitalize;">{{ method }}</div>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-actions" style="margin-top:1.5rem;">
+        <button class="btn btn--primary" type="submit" style="font-size:.95rem;padding:.65rem 1.5rem;">
+          Подтвердить
+        </button>
+        <a href="{{ url_for('session_detail', sid=ses['код_сеанса']) }}" class="btn btn--ghost">Отмена</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Сводка заказа -->
+  <div>
+    <div class="card">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;
+                  color:var(--purple-glow);margin-bottom:1rem;">
+        Ваш заказ
+      </div>
+
+      <div class="book-summary">
+        <div class="book-summary__row">
+          <span>Фильм</span>
+          <span style="text-align:right;max-width:180px;">{{ ses['фильм'] }}</span>
+        </div>
+        <div class="book-summary__row">
+          <span>Зал</span>
+          <span>{{ ses['зал'] }}</span>
+        </div>
+        <div class="book-summary__row">
+          <span>Начало</span>
+          <span>{{ ses['начало'] }}</span>
+        </div>
+        <div class="book-summary__row">
+          <span>Ряд / Место</span>
+          <span>{{ seat['ряд'] }} / {{ seat['номер_места'] }}</span>
+        </div>
+        <div class="book-summary__row">
+          <span>Тип места</span>
+          <span>{{ seat['тип_места'] }}</span>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;
+                  padding-top:.75rem;border-top:1px solid var(--border);">
+        <span style="font-size:.82rem;color:var(--text-muted);">Итого</span>
+        <div class="book-summary__price">{{ "%.0f"|format(ses['цена_руб']) }} ₽</div>
+      </div>
+    </div>
+
+    <div style="margin-top:.85rem;padding:.85rem 1rem;background:var(--green-soft);
+                border:1px solid rgba(52,211,153,.2);border-radius:var(--radius);
+                font-size:.78rem;color:var(--green);line-height:1.5;">
+      ⭐ За каждую покупку вы получаете бонусные баллы в личный кабинет
+    </div>
+  </div>
+
+</div>
+
+<style>
+  @media(max-width:800px){
+    div[style*="grid-template-columns:1fr 360px"] { grid-template-columns: 1fr !important; }
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Переключение действия (купить / забронировать)
+  const rBuy  = document.getElementById('r-buy');
+  const rBook = document.getElementById('r-book');
+  const cardBuy  = document.getElementById('card-buy');
+  const cardBook = document.getElementById('card-book');
+  const payGroup = document.getElementById('payment-group');
+
+  function updateActionCards() {
+    if (rBuy.checked) {
+      cardBuy.style.borderColor  = 'var(--purple-mid)';
+      cardBuy.style.background   = 'var(--accent-soft)';
+      cardBook.style.borderColor = 'var(--border)';
+      cardBook.style.background  = 'transparent';
+      payGroup.style.display     = '';
+    } else {
+      cardBook.style.borderColor = 'var(--purple-mid)';
+      cardBook.style.background  = 'var(--accent-soft)';
+      cardBuy.style.borderColor  = 'var(--border)';
+      cardBuy.style.background   = 'transparent';
+      payGroup.style.display     = 'none';
+    }
+  }
+
+  document.querySelectorAll('[name="действие"]').forEach(r => r.addEventListener('change', updateActionCards));
+
+  // Подсветка способа оплаты
+  document.querySelectorAll('.pay-radio').forEach(radio => {
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('.pay-option').forEach(opt => {
+        opt.style.borderColor = 'var(--border)';
+        opt.style.background  = 'transparent';
+      });
+      const selected = radio.closest('label').querySelector('.pay-option');
+      selected.style.borderColor = 'var(--purple-light)';
+      selected.style.background  = 'var(--accent-soft)';
+    });
+  });
+
+  updateActionCards();
+</script>
+{% endblock %}

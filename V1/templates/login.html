@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Вход — СИНЕМА</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <style>
+    .badge { display: inline-block; padding: .18rem .55rem; border-radius: 6px; font-size: .72rem; font-weight: 500; }
+    .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .auth-box {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 2.5rem; width: 100%; max-width: 440px;
+    }
+    .auth-box__brand {
+      font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 700;
+      color: var(--purple-glow); text-align: center; margin-bottom: .35rem;
+    }
+    .auth-box__sub { text-align: center; color: var(--text-muted); font-size: .85rem; margin-bottom: 2rem; }
+    .auth-switch { text-align: center; margin-top: 1.5rem; font-size: .82rem; color: var(--text-muted); }
+    .auth-switch a { color: var(--purple-light); text-decoration: none; font-weight: 500; }
+    .auth-switch a:hover { color: var(--purple-glow); }
+  </style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-box__brand">🎬 СИНЕМА</div>
+    <div class="auth-box__sub">Войдите, чтобы покупать билеты и управлять бронированиями</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+        <div class="flash flash--{{ cat }}" style="margin-bottom:.75rem;">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="form-group">
+        <label for="идентификатор">E-mail или телефон</label>
+        <input class="form-control" type="text" id="идентификатор" name="идентификатор"
+               placeholder="+7-900-000-0000 или email@example.com" autofocus required/>
+      </div>
+      <div class="form-group">
+        <label for="пароль">Пароль</label>
+        <input class="form-control" type="password" id="пароль" name="пароль"
+               placeholder="Введите пароль" required/>
+      </div>
+      <button class="btn btn--primary" type="submit"
+              style="width:100%;justify-content:center;margin-top:.5rem;">
+        Войти
+      </button>
+    </form>
+
+    <div class="auth-switch">
+      Ещё нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрироваться</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

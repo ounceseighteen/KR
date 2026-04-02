@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Главная — Кинотеатр{% endblock %}
+{% block content %}
+<div class="hero">
+  <h1>Добро пожаловать<br>в систему кинотеатра</h1>
+  <p>Управление сеансами, билетами и клиентами в одном месте</p>
+</div>
+
+<div class="quick-cards">
+  {% if top_film %}
+  <div class="quick-card">
+    <div class="quick-card__icon">🏆</div>
+    <div class="quick-card__title">Популярный фильм</div>
+    <div class="quick-card__main">{{ top_film['название'] }}</div>
+    <div class="quick-card__sub">{{ top_film['жанр'] }} · {{ top_film['сеансов'] }} сеансов</div>
+  </div>
+  {% endif %}
+  {% if least_hall %}
+  <div class="quick-card">
+    <div class="quick-card__icon">🎭</div>
+    <div class="quick-card__title">Мин. заполняемость</div>
+    <div class="quick-card__main">{{ least_hall['название'] }}</div>
+    <div class="quick-card__sub">{{ least_hall['заполняемость'] or 0 }}% заполнено</div>
+  </div>
+  {% endif %}
+  <div class="quick-card">
+    <div class="quick-card__icon">📅</div>
+    <div class="quick-card__title">Сеансов сегодня</div>
+    <div class="quick-card__main">{{ today_sessions|length }}</div>
+    <div class="quick-card__sub">
+      {% set live_count = namespace(n=0) %}
+      {% for s in today_sessions %}{% if s['код_сеанса'] in live_ids %}{% set live_count.n = live_count.n + 1 %}{% endif %}{% endfor %}
+      {% if live_count.n > 0 %}{{ live_count.n }} идёт прямо сейчас{% else %}Нет активных сейчас{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>Сеансы на сегодня</h1>
+    <p>Полное расписание текущего дня</p>
+  </div>
+  <a href="{{ url_for('schedule') }}" class="btn btn--ghost">Всё расписание →</a>
+</div>
+
+{% if today_sessions %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead><tr>
+      <th>Фильм</th><th>Зал</th><th>Начало</th><th>Конец</th>
+      <th>Формат</th><th>Цена</th><th>Статус</th>
+    </tr></thead>
+    <tbody>
+      {% for s in today_sessions %}
+      <tr>
+        <td>
+          <strong>{{ s['фильм'] }}</strong><br>
+          <span class="badge badge--age" style="margin-top:.2rem;">{{ s['возрастной_рейтинг'] }}</span>
+        </td>
+        <td style="color:var(--text-secondary);">{{ s['зал'] }}</td>
+        <td style="font-variant-numeric:tabular-nums;color:var(--purple-glow);font-weight:500;">{{ s['начало'][11:] }}</td>
+        <td style="font-variant-numeric:tabular-nums;color:var(--text-muted);">{{ s['окончание'][11:] }}</td>
+        <td><span class="badge badge--format">{{ s['формат'] }}</span></td>
+        <td style="font-weight:600;color:var(--accent);">{{ "%.0f"|format(s['цена_руб']) }} ₽</td>
+        <td>
+          {% if s['код_сеанса'] in live_ids %}
+            <span class="badge badge--live">● Live</span>
+          {% else %}
+            <span style="color:var(--text-muted);font-size:.8rem;">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty"><div class="empty__icon">🎞</div><p>Сеансов на сегодня не найдено</p></div>
+{% endif %}
+{% endblock %}

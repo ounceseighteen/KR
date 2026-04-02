@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Кинотеатр{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+</head>
+<body>
+
+{% if session.employee_id %}
+<nav class="navbar">
+  <a class="navbar__brand" href="{{ url_for('index') }}">🎬СИНЕМА</a>
+  <ul class="navbar__links">
+    <li><a href="{{ url_for('index') }}"    {% if request.endpoint=='index'    %}class="active"{% endif %}>Главная</a></li>
+    <li><a href="{{ url_for('movies') }}"   {% if request.endpoint in ('movies','movie_add','movie_edit') %}class="active"{% endif %}>Фильмы</a></li>
+    <li><a href="{{ url_for('schedule') }}" {% if request.endpoint in ('schedule','session_add','session_edit') %}class="active"{% endif %}>Расписание</a></li>
+    <li><a href="{{ url_for('tickets') }}"  {% if request.endpoint in ('tickets','ticket_sell') %}class="active"{% endif %}>Билеты</a></li>
+    <li><a href="{{ url_for('clients') }}"  {% if request.endpoint in ('clients','client_detail','client_add','client_edit') %}class="active"{% endif %}>Клиенты</a></li>
+    <li><a href="{{ url_for('halls') }}"    {% if request.endpoint=='halls'    %}class="active"{% endif %}>Залы</a></li>
+    <li><a href="{{ url_for('stats') }}"    {% if request.endpoint=='stats'    %}class="active"{% endif %}>Статистика</a></li>
+  </ul>
+  <div class="navbar__user">
+    <span>👤 <strong>{{ session.employee_name.split()[0] }}</strong> · <em>{{ session.role }}</em></span>
+    <a href="{{ url_for('logout') }}">Выйти</a>
+  </div>
+</nav>
+{% endif %}
+
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+      {% for cat, msg in messages %}
+      <li class="flash flash--{{ cat }}">{{ msg }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer>&copy; 2026 Информационная система кинотеатра v2</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

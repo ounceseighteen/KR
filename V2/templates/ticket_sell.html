@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Продать билет — Кинотеатр{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>Продажа билета</h1>
+    <p>Выберите сеанс, место и клиента</p>
+  </div>
+  <a href="{{ url_for('tickets') }}" class="btn btn--ghost">← Назад</a>
+</div>
+
+<div class="form-card" style="max-width:780px;">
+  <form method="POST" id="sellForm">
+    <div class="form-group">
+      <label>Сеанс *</label>
+      <select class="form-control" name="код_сеанса" id="sesSelect" required>
+        {% for s in sessions %}
+        <option value="{{ s['код_сеанса'] }}" data-price="{{ s['цена_руб'] }}">{{ s['label'] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Свободные места</label>
+      <div id="seatArea" style="min-height:60px;">
+        <div id="seatGrid" class="seat-grid">
+          <!-- динамически заполняется JS -->
+        </div>
+        <div class="seat-legend">
+          <span><span class="dot dot--free"></span>Свободно</span>
+          <span><span class="dot dot--sel"></span>Выбрано</span>
+        </div>
+      </div>
+      <input type="hidden" name="код_места" id="seatInput" required/>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Цена (руб) *</label>
+        <input class="form-control" type="number" step="0.01" min="0"
+               name="цена_руб" id="priceInput" required placeholder="450"/>
+      </div>
+      <div class="form-group">
+        <label>Статус</label>
+        <select class="form-control" name="статус">
+          <option value="оплачен">оплачен</option>
+          <option value="забронирован">забронирован</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Способ оплаты</label>
+      <select class="form-control" name="способ_оплаты">
+        <option value="">— не указан —</option>
+        <option value="наличные">Наличные</option>
+        <option value="карта">Карта</option>
+        <option value="онлайн">Онлайн</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Клиент (необязательно)</label>
+      <select class="form-control" name="код_клиента">
+        <option value="">— без привязки —</option>
+        {% for c in clients %}
+        <option value="{{ c['код_клиента'] }}">{{ c['полное_имя'] }} · {{ c['телефон'] or '—' }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn--primary" type="submit">Оформить билет</button>
+      <a href="{{ url_for('tickets') }}" class="btn btn--ghost">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const sesSelect   = document.getElementById('sesSelect');
+const seatGrid    = document.getElementById('seatGrid');
+const seatInput   = document.getElementById('seatInput');
+const priceInput  = document.getElementById('priceInput');
+
+function groupByRow(seats) {
+  const rows = {};
+  seats.forEach(s => {
+    if (!rows[s.ряд]) rows[s.ряд] = [];
+    rows[s.ряд].push(s);
+  });
+  return rows;
+}
+
+async function loadSeats(sid) {
+  seatGrid.innerHTML = '<span style="color:var(--text-muted);font-size:.85rem;">Загрузка…</span>';
+  seatInput.value = '';
+  try {
+    const res  = await fetch(`/tickets/free_seats/${sid}`);
+    const data = await res.json();
+    priceInput.value = data.price;
+    renderSeats(data.seats);
+  } catch(e) {
+    seatGrid.innerHTML = '<span style="color:var(--red);">Ошибка загрузки мест</span>';
+  }
+}
+
+function renderSeats(seats) {
+  seatGrid.innerHTML = '';
+  if (!seats.length) {
+    seatGrid.innerHTML = '<span style="color:var(--text-muted);font-size:.85rem;">Нет свободных мест</span>';
+    return;
+  }
+  const byRow = groupByRow(seats);
+  Object.keys(byRow).sort((a,b)=>a-b).forEach(row => {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'seat-row';
+    const lbl = document.createElement('span');
+    lbl.className = 'seat-row__label';
+    lbl.textContent = `Ряд ${row}`;
+    rowDiv.appendChild(lbl);
+    byRow[row].forEach(s => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'seat-btn';
+      btn.textContent = s.номер_места;
+      btn.title = `Ряд ${s.ряд}, место ${s.номер_места} (${s.тип_места})`;
+      btn.dataset.id = s.код_места;
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.seat-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        seatInput.value = s.код_места;
+      });
+      rowDiv.appendChild(btn);
+    });
+    seatGrid.appendChild(rowDiv);
+  });
+}
+
+sesSelect.addEventListener('change', () => loadSeats(sesSelect.value));
+// Инициализация
+if (sesSelect.value) loadSeats(sesSelect.value);
+</script>
+{% endblock %}

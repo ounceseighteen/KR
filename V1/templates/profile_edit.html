@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Редактировать профиль — СИНЕМА{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>Редактировать профиль</h1>
+  </div>
+  <a href="{{ url_for('profile') }}" class="btn btn--ghost">← Назад</a>
+</div>
+
+<div class="form-card">
+  <form method="POST" action="{{ url_for('profile_edit') }}">
+    <div class="form-group">
+      <label>Полное имя *</label>
+      <input class="form-control" name="полное_имя" required
+             value="{{ client['полное_имя'] }}"
+             placeholder="Иванов Иван Иванович"/>
+    </div>
+    <div class="form-group">
+      <label>Номер телефона *</label>
+      <input class="form-control" name="телефон" required
+             value="{{ client['телефон'] or '' }}"
+             placeholder="+7-900-000-0000"/>
+    </div>
+    <div class="form-group">
+      <label>E-mail</label>
+      <input class="form-control" type="email" name="электронная_почта"
+             value="{{ client['электронная_почта'] or '' }}"
+             placeholder="email@example.com"/>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn--primary" type="submit">Сохранить</button>
+      <a href="{{ url_for('profile') }}" class="btn btn--ghost">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

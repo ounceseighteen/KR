@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{% if action=='add' %}Добавить фильм{% else %}Редактировать фильм{% endif %} — Кинотеатр{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>{% if action=='add' %}Добавить фильм{% else %}Редактировать фильм{% endif %}</h1>
+  </div>
+  <a href="{{ url_for('movies') }}" class="btn btn--ghost">← Назад</a>
+</div>
+
+<div class="form-card">
+  <form method="POST">
+    <div class="form-group">
+      <label>Название *</label>
+      <input class="form-control" name="название" required
+             value="{{ film['название'] if film else '' }}" placeholder="Название фильма"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Жанр *</label>
+        <input class="form-control" name="жанр" required
+               value="{{ film['жанр'] if film else '' }}" placeholder="Фантастика, Драма…"/>
+      </div>
+      <div class="form-group">
+        <label>Длительность (мин) *</label>
+        <input class="form-control" type="number" name="длительность_мин" required min="1"
+               value="{{ film['длительность_мин'] if film else '' }}"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Возрастной рейтинг *</label>
+        <select class="form-control" name="возрастной_рейтинг" required>
+          {% for r in ['0+','6+','12+','16+','18+'] %}
+          <option value="{{ r }}" {% if film and film['возрастной_рейтинг']==r %}selected{% endif %}>{{ r }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Год выпуска *</label>
+        <input class="form-control" type="number" name="год_выпуска" required min="1900" max="2030"
+               value="{{ film['год_выпуска'] if film else 2024 }}"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Язык</label>
+      <input class="form-control" name="язык"
+             value="{{ film['язык'] if film else 'Русский' }}"/>
+    </div>
+    <div class="form-group">
+      <label>Описание</label>
+      <textarea class="form-control" name="описание" placeholder="Краткое описание фильма…">{{ film['описание'] if film else '' }}</textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn--primary" type="submit">
+        {% if action=='add' %}Добавить{% else %}Сохранить{% endif %}
+      </button>
+      <a href="{{ url_for('movies') }}" class="btn btn--ghost">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

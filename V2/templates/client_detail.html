@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ client['полное_имя'] }} — Кинотеатр{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>{{ client['полное_имя'] }}</h1>
+    <p>Карточка клиента · ID {{ client['код_клиента'] }}</p>
+  </div>
+  <div style="display:flex;gap:.6rem;">
+    {% if session.role in ('администратор','менеджер','кассир') %}
+    <a href="{{ url_for('client_edit', cid=client['код_клиента']) }}" class="btn btn--ghost">✏ Редактировать</a>
+    {% endif %}
+    <a href="{{ url_for('clients') }}" class="btn btn--ghost">← Назад</a>
+  </div>
+</div>
+
+<div class="client-detail">
+  <!-- Левая колонка — данные -->
+  <div class="card">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:var(--purple-glow);margin-bottom:1rem;">
+      Контактные данные
+    </div>
+    <div class="info-block">
+      <div class="info-row">
+        <span class="info-row__label">Телефон</span>
+        <span class="info-row__value">{{ client['телефон'] or '—' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row__label">E-mail</span>
+        <span class="info-row__value">{{ client['электронная_почта'] or '—' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row__label">Бонусные баллы</span>
+        <span class="info-row__value" style="color:var(--yellow);font-weight:500;">
+          {{ client['бонусные_баллы'] }} ⭐
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-row__label">Дата регистрации</span>
+        <span class="info-row__value">{{ client['дата_регистрации'] }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row__label">Куплено билетов</span>
+        <span class="info-row__value" style="color:var(--purple-light);font-weight:500;">{{ history|length }}</span>
+      </div>
+      {% if history %}
+      <div class="info-row">
+        <span class="info-row__label">Сумма покупок</span>
+        <span class="info-row__value" style="color:var(--accent);font-weight:600;">
+          {{ "%.0f"|format(history|sum(attribute='цена_руб')) }} ₽
+        </span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Правая колонка — история -->
+  <div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600;
+                color:var(--text-primary);margin-bottom:1rem;">
+      История посещений
+    </div>
+    {% if history %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>Фильм</th><th>Зал / Место</th><th>Дата сеанса</th>
+          <th>Цена</th><th>Статус</th><th>Оплата</th>
+        </tr></thead>
+        <tbody>
+          {% for t in history %}
+          <tr>
+            <td><strong style="font-size:.9rem;">{{ t['фильм'] }}</strong></td>
+            <td style="font-size:.82rem;color:var(--text-secondary);">
+              {{ t['зал'] }}<br>Ряд {{ t['ряд'] }}, место {{ t['номер_места'] }}
+            </td>
+            <td style="font-size:.82rem;color:var(--text-muted);">{{ t['начало'] }}</td>
+            <td style="font-weight:600;color:var(--accent);">{{ "%.0f"|format(t['цена_руб']) }} ₽</td>
+            <td><span class="badge badge--{{ t['статус'] }}">{{ t['статус'] }}</span></td>
+            <td style="font-size:.8rem;color:var(--text-secondary);">{{ t['способ_оплаты'] or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><div class="empty__icon">🎟</div><p>Историй посещений нет</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

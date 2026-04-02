@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Статистика — Кинотеатр{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>Статистика</h1>
+    <p>Сводные показатели кинотеатра</p>
+  </div>
+</div>
+
+<div class="grid-4" style="margin-bottom:2rem;">
+  <div class="stat-big">
+    <div class="stat-big__value">{{ total_films }}</div>
+    <div class="stat-big__label">Фильмов</div>
+  </div>
+  <div class="stat-big">
+    <div class="stat-big__value">{{ total_tickets }}</div>
+    <div class="stat-big__label">Билетов</div>
+  </div>
+  <div class="stat-big">
+    <div class="stat-big__value">{{ total_clients }}</div>
+    <div class="stat-big__label">Клиентов</div>
+  </div>
+  <div class="stat-big">
+    <div class="stat-big__value" style="font-size:1.75rem;">{{ "%.0f"|format(total_revenue) }} ₽</div>
+    <div class="stat-big__label">Выручка</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;margin-bottom:1rem;color:var(--purple-glow);">
+      🏆 Топ фильмов по сеансам
+    </h2>
+    {% for f in top_films %}
+    <div class="stat-row">
+      <span class="stat-row__name">{{ loop.index }}. {{ f['название'] }}</span>
+      <span class="stat-row__val">{{ f['сеансов'] }} сеансов</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;margin-bottom:1rem;color:var(--purple-glow);">
+      🎟 Билеты по статусам
+    </h2>
+    {% for t in tickets_by_status %}
+    <div class="stat-row">
+      <span class="stat-row__name"><span class="badge badge--{{ t['статус'] }}">{{ t['статус'] }}</span></span>
+      <span class="stat-row__val">{{ t['кол_во'] }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card" style="grid-column:1/-1;">
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;margin-bottom:1rem;color:var(--purple-glow);">
+      💰 Выручка по залам
+    </h2>
+    {% for r in revenue_by_hall %}
+    {% set pct = (r['выручка']/total_revenue*100) if total_revenue else 0 %}
+    <div style="margin-bottom:.85rem;">
+      <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:.35rem;">
+        <span style="color:var(--text-secondary);">{{ r['зал'] }}</span>
+        <span style="font-weight:500;">{{ "%.0f"|format(r['выручка']) }} ₽</span>
+      </div>
+      <div class="fill-bar">
+        <div class="fill-bar__inner" style="width:{{ pct|round(1) }}%;"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

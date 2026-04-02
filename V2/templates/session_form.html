@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{% if action=='add' %}Добавить сеанс{% else %}Редактировать сеанс{% endif %} — Кинотеатр{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>{% if action=='add' %}Добавить сеанс{% else %}Редактировать сеанс{% endif %}</h1>
+  </div>
+  <a href="{{ url_for('schedule') }}" class="btn btn--ghost">← Назад</a>
+</div>
+
+<div class="form-card">
+  <form method="POST">
+    <div class="form-group">
+      <label>Фильм *</label>
+      <select class="form-control" name="код_фильма" required>
+        {% for f in films %}
+        <option value="{{ f['код_фильма'] }}"
+          {% if ses and ses['код_фильма']==f['код_фильма'] %}selected{% endif %}>
+          {{ f['название'] }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Зал *</label>
+        <select class="form-control" name="код_зала" required>
+          {% for h in halls %}
+          <option value="{{ h['код_зала'] }}"
+            {% if ses and ses['код_зала']==h['код_зала'] %}selected{% endif %}>
+            {{ h['название'] }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Формат *</label>
+        <select class="form-control" name="формат" required>
+          {% for fmt in ['2D','3D','IMAX','4DX'] %}
+          <option value="{{ fmt }}" {% if ses and ses['формат']==fmt %}selected{% endif %}>{{ fmt }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Начало (ДД.ММ.ГГГГ ЧЧ:ММ) *</label>
+        <input class="form-control" name="начало" required placeholder="26.03.2026 14:00"
+               value="{{ ses['начало'] if ses else '' }}"/>
+      </div>
+      <div class="form-group">
+        <label>Окончание (ДД.ММ.ГГГГ ЧЧ:ММ) *</label>
+        <input class="form-control" name="окончание" required placeholder="26.03.2026 16:30"
+               value="{{ ses['окончание'] if ses else '' }}"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Цена (руб) *</label>
+      <input class="form-control" type="number" step="0.01" min="0" name="цена_руб" required
+             value="{{ ses['цена_руб'] if ses else '' }}" placeholder="450"/>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn--primary" type="submit">
+        {% if action=='add' %}Добавить{% else %}Сохранить{% endif %}
+      </button>
+      <a href="{{ url_for('schedule') }}" class="btn btn--ghost">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

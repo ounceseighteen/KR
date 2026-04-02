@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Залы — Кинотеатр{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>Залы кинотеатра</h1>
+    <p>Информация о залах и заполняемости</p>
+  </div>
+</div>
+
+{% if halls %}
+<div class="grid-3">
+  {% for h in halls %}
+  <div class="hall-card {% if not h['активен'] %}hall-card__inactive{% endif %}">
+    <div class="hall-card__name">{{ h['название'] }}</div>
+    <div style="display:flex;gap:.4rem;margin-bottom:.75rem;flex-wrap:wrap;">
+      <span class="badge badge--format">{{ h['тип_зала'] }}</span>
+      {% if not h['активен'] %}
+      <span class="badge" style="background:var(--red-soft);color:var(--red);border:1px solid rgba(239,68,68,.3);">Закрыт</span>
+      {% endif %}
+    </div>
+    <div class="hall-card__stat"><span>Вместимость</span><strong>{{ h['вместимость'] }} мест</strong></div>
+    <div class="hall-card__stat"><span>Всего сеансов</span><strong>{{ h['сеансов_всего'] }}</strong></div>
+    <div class="hall-card__stat"><span>Продано билетов</span><strong>{{ h['билетов_продано'] }}</strong></div>
+    <div class="hall-card__stat"><span>Заполняемость</span>
+      <strong style="color:var(--purple-glow);">{{ h['заполняемость'] or 0 }}%</strong>
+    </div>
+    <div class="fill-bar" style="margin-top:.75rem;">
+      <div class="fill-bar__inner" style="width:{{ [h['заполняемость'] or 0, 100]|min }}%;"></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty"><div class="empty__icon">🎭</div><p>Залы не найдены</p></div>
+{% endif %}
+{% endblock %}

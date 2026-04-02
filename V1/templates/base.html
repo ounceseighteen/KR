@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}СИНЕМА{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  <style>
+    .client-nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(13,11,20,.9);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .client-nav__brand {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem; font-weight: 700;
+      color: var(--purple-glow); text-decoration: none;
+      letter-spacing: .04em;
+    }
+    .client-nav__links { display: flex; gap: .15rem; list-style: none; }
+    .client-nav__links a {
+      display: block; padding: .4rem .85rem;
+      color: var(--text-secondary); text-decoration: none;
+      font-size: .875rem; font-weight: 400; border-radius: 8px;
+      transition: color .2s, background .2s;
+    }
+    .client-nav__links a:hover { color: var(--text-primary); background: var(--accent-soft); }
+    .client-nav__links a.active { color: var(--purple-glow); background: var(--accent-soft); }
+    .client-nav__right {
+      display: flex; align-items: center; gap: .75rem;
+      font-size: .82rem; color: var(--text-secondary);
+    }
+    .client-nav__right strong { color: var(--purple-light); }
+    .client-nav__right a {
+      color: var(--text-muted); text-decoration: none; font-size: .8rem;
+      padding: .3rem .7rem; border: 1px solid var(--border);
+      border-radius: 7px; transition: border-color .2s, color .2s;
+    }
+    .client-nav__right a:hover { border-color: var(--border-glow); color: var(--text-primary); }
+    .client-nav__right .btn--primary { border: none; }
+
+    /* Карточка сеанса (клиентская) */
+    .session-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1.1rem 1.3rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; flex-wrap: wrap;
+      transition: border-color .2s, box-shadow .2s;
+      text-decoration: none; color: inherit;
+    }
+    .session-card:hover { border-color: var(--border-glow); box-shadow: var(--shadow); }
+    .session-card__film { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 700; }
+    .session-card__meta { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .25rem; }
+    .session-card__right { display: flex; align-items: center; gap: 1.5rem; flex-shrink: 0; }
+    .session-card__time { font-size: 1.2rem; font-weight: 600; color: var(--purple-glow); font-variant-numeric: tabular-nums; }
+    .session-card__price { font-size: 1rem; font-weight: 600; color: var(--accent); }
+
+    /* Схема мест (детальная) */
+    .seat-map { display: flex; flex-direction: column; gap: .45rem; margin: 1rem 0; }
+    .seat-map__row { display: flex; gap: .35rem; align-items: center; }
+    .seat-map__label { font-size: .7rem; color: var(--text-muted); width: 36px; text-align: right; flex-shrink: 0; }
+    .seat-map__screen {
+      text-align: center; font-size: .7rem; letter-spacing: .12em;
+      color: var(--text-muted); padding: .4rem 0;
+      border-top: 2px solid var(--border-glow); margin-bottom: .75rem;
+      border-radius: 2px;
+    }
+    .seat-btn-d {
+      width: 32px; height: 32px; border-radius: 6px; font-size: .7rem; font-weight: 500;
+      cursor: pointer; border: 1px solid var(--border); background: var(--bg-elevated);
+      color: var(--text-secondary); transition: background .15s, border-color .15s, color .15s;
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none;
+    }
+    .seat-btn-d:hover { border-color: var(--purple-light); color: var(--text-primary); background: var(--bg-card); }
+    .seat-btn-d.occupied { background: var(--bg); border-color: rgba(42,34,69,.5); color: var(--text-muted); cursor: not-allowed; opacity: .4; }
+    .seat-btn-d.vip { border-color: rgba(252,211,77,.4); }
+    .seat-btn-d.vip:not(.occupied):hover { border-color: var(--yellow); background: var(--yellow-soft); }
+
+    .seat-legend { display: flex; gap: 1.2rem; font-size: .75rem; color: var(--text-muted); margin-top: .75rem; flex-wrap: wrap; }
+    .seat-legend span { display: flex; align-items: center; gap: .4rem; }
+    .dot { width: 11px; height: 11px; border-radius: 3px; }
+    .dot--free { background: var(--bg-elevated); border: 1px solid var(--border); }
+    .dot--occ  { background: var(--bg); border: 1px solid rgba(42,34,69,.5); opacity: .5; }
+    .dot--vip  { background: var(--yellow-soft); border: 1px solid rgba(252,211,77,.4); }
+
+    /* Профиль */
+    .profile-grid { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; }
+    @media(max-width:800px) { .profile-grid { grid-template-columns: 1fr; } }
+
+    .bonus-badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: var(--yellow-soft); color: var(--yellow);
+      border: 1px solid rgba(252,211,77,.3); border-radius: 10px;
+      padding: .35rem .8rem; font-size: .82rem; font-weight: 500;
+    }
+
+    /* Бейдж статуса (дополнительные цвета) */
+    .badge { display: inline-block; padding: .18rem .55rem; border-radius: 6px; font-size: .72rem; font-weight: 500; }
+    .badge--format   { background: var(--blue-soft);   color: var(--blue);   border: 1px solid rgba(99,102,241,.2); }
+    .badge--genre    { background: var(--accent-soft);  color: var(--accent); border: 1px solid rgba(232,121,249,.2); }
+    .badge--age      { background: rgba(42,34,69,.6);   color: var(--text-secondary); border: 1px solid var(--border); }
+    .badge--оплачен  { background: var(--green-soft);   color: var(--green);  border: 1px solid rgba(52,211,153,.25); }
+    .badge--забронирован { background: var(--yellow-soft); color: var(--yellow); border: 1px solid rgba(251,191,36,.25); }
+    .badge--использован  { background: rgba(42,34,69,.5); color: var(--text-muted); border: 1px solid var(--border); }
+    .badge--отменён  { background: var(--red-soft);    color: var(--red);    border: 1px solid rgba(239,68,68,.25); }
+
+    /* Сессионная карточка бронирования */
+    .book-summary {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+    .book-summary__row { display: flex; justify-content: space-between; font-size: .875rem; padding: .3rem 0; }
+    .book-summary__row span:first-child { color: var(--text-muted); }
+    .book-summary__row span:last-child  { color: var(--text-primary); font-weight: 500; }
+    .book-summary__price { font-size: 1.4rem; font-weight: 700; color: var(--accent); margin-top: .5rem; }
+  </style>
+</head>
+<body>
+
+<nav class="client-nav">
+  <a class="client-nav__brand" href="{{ url_for('index') }}">🎬СИНЕМА</a>
+
+  {% if session.client_id %}
+  <ul class="client-nav__links">
+    <li><a href="{{ url_for('index') }}"   {% if request.endpoint == 'index'   %}class="active"{% endif %}>Расписание</a></li>
+    <li><a href="{{ url_for('profile') }}" {% if request.endpoint in ('profile','profile_edit','change_password') %}class="active"{% endif %}>Личный кабинет</a></li>
+  </ul>
+  <div class="client-nav__right">
+    <span>👤 <strong>{{ session.client_name.split()[1] if session.client_name.split()|length > 1 else session.client_name }}</strong></span>
+    <a href="{{ url_for('logout') }}">Выйти</a>
+  </div>
+  {% else %}
+  <ul class="client-nav__links">
+    <li><a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Расписание</a></li>
+  </ul>
+  <div class="client-nav__right">
+    <a href="{{ url_for('login') }}">Войти</a>
+    <a href="{{ url_for('register') }}" class="btn btn--primary">Регистрация</a>
+  </div>
+  {% endif %}
+</nav>
+
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+      {% for cat, msg in messages %}
+      <li class="flash flash--{{ cat }}">{{ msg }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer>&copy; 2026 Информационная система кинотеатра</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

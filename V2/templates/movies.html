@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Фильмы — Кинотеатр{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header__left">
+    <h1>Фильмы</h1>
+    <p>Каталог фильмов в репертуаре</p>
+  </div>
+  {% if session.role in ('администратор','менеджер') %}
+  <a href="{{ url_for('movie_add') }}" class="btn btn--primary">+ Добавить фильм</a>
+  {% endif %}
+</div>
+
+<div class="filter-bar">
+  <form method="GET" action="{{ url_for('movies') }}" style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end;width:100%;">
+    <div class="form-group" style="flex:1;min-width:200px;">
+      <label>Поиск по названию</label>
+      <input class="form-control" name="q" value="{{ q }}" placeholder="Название фильма…"/>
+    </div>
+    <button class="btn btn--primary" type="submit">Найти</button>
+    {% if q %}<a href="{{ url_for('movies') }}" class="btn btn--ghost">Сбросить</a>{% endif %}
+  </form>
+</div>
+
+{% if films %}
+<div class="grid-3">
+  {% for f in films %}
+  <div class="film-card">
+    <div class="film-card__title">{{ f['название'] }}</div>
+    <div class="film-card__meta">
+      <span class="badge badge--genre">{{ f['жанр'] }}</span>
+      <span class="badge badge--age">{{ f['возрастной_рейтинг'] }}</span>
+    </div>
+    {% if f['описание'] %}
+    <p class="film-card__desc">{{ f['описание'] }}</p>
+    {% endif %}
+    <div class="film-card__footer">
+      <span>🕐 {{ f['длительность_мин'] }} мин · {{ f['год_выпуска'] }}</span>
+      <span style="color:var(--purple-light);font-weight:500;">{{ f['кол_сеансов'] }} сеансов</span>
+    </div>
+    {% if session.role in ('администратор','менеджер') %}
+    <div class="film-card__actions">
+      <a href="{{ url_for('movie_edit', fid=f['код_фильма']) }}" class="btn btn--ghost btn--sm">✏ Изменить</a>
+      {% if session.role == 'администратор' %}
+      <form method="POST" action="{{ url_for('movie_delete', fid=f['код_фильма']) }}"
+            onsubmit="return confirm('Удалить фильм «{{ f['название'] }}»?')">
+        <button class="btn btn--danger btn--sm" type="submit">✕</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty"><div class="empty__icon">🎬</div><p>Фильмы не найдены</p></div>
+{% endif %}
+{% endblock %}

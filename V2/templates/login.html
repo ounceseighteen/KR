@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Вход — Кинотеатр</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="login-box__title">🎬 СИНЕМА</div>
+    <div class="login-box__sub">Информационная система кинотеатра</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+        <div class="flash flash--{{ cat }}" style="margin-bottom:.75rem;">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="form-group">
+        <label for="login">Логин</label>
+        <input class="form-control" type="text" id="login" name="login"
+               placeholder="Введите логин" autofocus required/>
+      </div>
+      <div class="form-group">
+        <label for="password">Пароль</label>
+        <input class="form-control" type="password" id="password" name="password"
+               placeholder="Введите пароль" required/>
+      </div>
+      <button class="btn btn--primary" type="submit" style="width:100%; justify-content:center; margin-top:.5rem;">
+        Войти
+      </button>
+    </form>
+
+    <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border); font-size:.75rem; color:var(--text-muted);">
+      <div style="margin-bottom:.35rem; font-weight:500; color:var(--text-secondary);">Тестовые учётные записи:</div>
+      <div>admin / admin123 — Администратор</div>
+      <div>manager / manager2024 — Менеджер</div>
+      <div>cashier1 / cash001 — Кассир</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
