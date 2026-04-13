@@ -1,0 +1,37 @@
+{% extends 'admin/base.html' %}
+{% block title %}{{ 'Редактировать' if film else 'Добавить' }} фильм — Админ{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1 class="page-title">{{ 'Редактировать фильм' if film else 'Добавить фильм' }}</h1>
+    <a href="{{ url_for('admin_films') }}" class="btn btn--outline">← Назад</a>
+</div>
+
+<div class="form-card">
+    <form method="post">
+        <div class="form-group">
+            <label>Название</label>
+            <input type="text" name="title" required value="{{ film.title if film else '' }}">
+        </div>
+        <div class="form-group">
+            <label>Описание</label>
+            <textarea name="description" rows="4">{{ film.description if film else '' }}</textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Жанр</label>
+                <input type="text" name="genre" value="{{ film.genre if film else '' }}">
+            </div>
+            <div class="form-group">
+                <label>Длительность (мин.)</label>
+                <input type="number" name="duration" min="1" value="{{ film.duration if film else '' }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Постер (имя файла)</label>
+            <input type="text" name="poster" value="{{ film.poster if film else '' }}" placeholder="film.jpg">
+        </div>
+        <button type="submit" class="btn btn--primary">Сохранить</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Афиша — КиноМакс{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1 class="hero__title">Афиша кинотеатра</h1>
+    <p class="hero__sub">Выберите фильм и забронируйте место онлайн</p>
+</section>
+
+{% if upcoming %}
+<section class="section">
+    <h2 class="section__title">Сегодня в кино</h2>
+    <div class="today-list">
+        {% for s in upcoming %}
+        <a href="{{ url_for('session_view', session_id=s.id) }}" class="today-card">
+            <span class="today-card__time">{{ s.time }}</span>
+            <span class="today-card__title">{{ s.title }}</span>
+            <span class="today-card__hall">{{ s.hall_name }}</span>
+            <span class="today-card__price">{{ s.price|int }} ₽</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="section">
+    <h2 class="section__title">Все фильмы</h2>
+    <div class="films-grid">
+        {% for film in films %}
+        <a href="{{ url_for('film', film_id=film.id) }}" class="film-card">
+            <div class="film-card__poster">
+                <div class="film-card__poster-placeholder">
+                    {{ film.title[0] }}
+                </div>
+            </div>
+            <div class="film-card__info">
+                <h3 class="film-card__title">{{ film.title }}</h3>
+                <span class="film-card__genre">{{ film.genre }}</span>
+                <span class="film-card__duration">{{ film.duration }} мин.</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Админ — КиноМакс{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-body">
+
+<div class="admin-layout">
+    <aside class="sidebar">
+        <a href="{{ url_for('index') }}" class="sidebar__brand">
+            <span class="logo__icon">▶</span> КиноМакс
+        </a>
+        <nav class="sidebar__nav">
+            <a href="{{ url_for('admin') }}" class="sidebar__link">📊 Панель</a>
+            <a href="{{ url_for('admin_films') }}" class="sidebar__link">🎬 Фильмы</a>
+            <a href="{{ url_for('admin_halls') }}" class="sidebar__link">🏛 Залы</a>
+            <a href="{{ url_for('admin_sessions') }}" class="sidebar__link">🕐 Сеансы</a>
+            <a href="{{ url_for('admin_bookings') }}" class="sidebar__link">🎟 Бронирования</a>
+            <a href="{{ url_for('admin_users') }}" class="sidebar__link">👥 Пользователи</a>
+        </nav>
+        <div class="sidebar__footer">
+            <span>{{ user.name }}</span>
+            <a href="{{ url_for('logout') }}" class="btn btn--outline btn--sm">Выйти</a>
+        </div>
+    </aside>
+
+    <div class="admin-content">
+        <div class="admin-content__inner">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="alerts">
+                        {% for category, message in messages %}
+                            <div class="alert alert--{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Вход — КиноМакс{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1 class="auth-card__title">Вход в систему</h1>
+        <form method="post">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required placeholder="your@email.ru">
+            </div>
+            <div class="form-group">
+                <label>Пароль</label>
+                <input type="password" name="password" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn btn--primary btn--full">Войти</button>
+        </form>
+        <p class="auth-card__footer">Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрироваться</a></p>
+        <div class="auth-hint">
+            <strong>Демо-доступ:</strong><br>
+            Админ: admin@kinomax.ru / admin123<br>
+            Клиент: ivan@mail.ru / ivan123
+        </div>
+    </div>
+</div>
+{% endblock %}

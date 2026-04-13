@@ -1,0 +1,35 @@
+{% extends 'admin/base.html' %}
+{% block title %}Панель управления — КиноМакс{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Панель управления</h1>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card__num">{{ stats.films }}</div>
+        <div class="stat-card__label">Фильмов</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__num">{{ stats.halls }}</div>
+        <div class="stat-card__label">Залов</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__num">{{ stats.sessions }}</div>
+        <div class="stat-card__label">Сеансов</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__num">{{ stats.bookings }}</div>
+        <div class="stat-card__label">Бронирований</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__num">{{ stats.users }}</div>
+        <div class="stat-card__label">Клиентов</div>
+    </div>
+</div>
+
+<div class="admin-quick">
+    <a href="{{ url_for('admin_film_add') }}" class="btn btn--primary">+ Добавить фильм</a>
+    <a href="{{ url_for('admin_session_add') }}" class="btn btn--primary">+ Добавить сеанс</a>
+    <a href="{{ url_for('admin_hall_add') }}" class="btn btn--primary">+ Добавить зал</a>
+</div>
+{% endblock %}

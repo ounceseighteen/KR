@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}КиноМакс{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="header">
+    <div class="container header__inner">
+        <a href="{{ url_for('index') }}" class="logo">
+            <span class="logo__icon">▶</span>
+            <span class="logo__text">КиноМакс</span>
+        </a>
+        <nav class="nav">
+            <a href="{{ url_for('index') }}" class="nav__link">Афиша</a>
+            {% if user %}
+                {% if user.role == 'admin' %}
+                    <a href="{{ url_for('admin') }}" class="nav__link nav__link--admin">Админ-панель</a>
+                {% endif %}
+                <a href="{{ url_for('cabinet') }}" class="nav__link">Мои билеты</a>
+                <span class="nav__user">{{ user.name }}</span>
+                <a href="{{ url_for('logout') }}" class="btn btn--outline btn--sm">Выйти</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="nav__link">Войти</a>
+                <a href="{{ url_for('register') }}" class="btn btn--primary btn--sm">Регистрация</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
+
+<main class="main">
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alerts">
+                    {% for category, message in messages %}
+                        <div class="alert alert--{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container footer__inner">
+        <div class="footer__brand">
+            <span class="logo__icon">▶</span> КиноМакс
+        </div>
+        <div class="footer__info">
+            <p>г. Ижевск, ул. Пушкинская, 268</p>
+            <p>Тел.: +7 (3412) 00-00-00</p>
+        </div>
+        <div class="footer__copy">
+            © 2026 КиноМакс. Все права защищены.
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

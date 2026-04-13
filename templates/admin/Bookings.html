@@ -1,0 +1,48 @@
+{% extends 'admin/base.html' %}
+{% block title %}Бронирования — Админ{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Бронирования</h1>
+
+<form method="get" class="filter-bar">
+    <div class="form-group">
+        <label>Дата</label>
+        <input type="date" name="date" value="{{ filter_date }}">
+    </div>
+    <div class="form-group">
+        <label>Фильм</label>
+        <select name="film_id">
+            <option value="">Все фильмы</option>
+            {% for film in films %}
+            <option value="{{ film.id }}" {% if filter_film == film.id|string %}selected{% endif %}>{{ film.title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn--primary">Применить</button>
+    <a href="{{ url_for('admin_bookings') }}" class="btn btn--outline">Сбросить</a>
+</form>
+
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead>
+            <tr><th>ID</th><th>Клиент</th><th>Фильм</th><th>Дата</th><th>Время</th><th>Зал</th><th>Место</th><th>Цена</th></tr>
+        </thead>
+        <tbody>
+            {% for b in bookings %}
+            <tr>
+                <td>{{ b.id }}</td>
+                <td>{{ b.user_name }}<br><small>{{ b.email }}</small></td>
+                <td>{{ b.title }}</td>
+                <td>{{ b.date }}</td>
+                <td>{{ b.time }}</td>
+                <td>{{ b.hall_name }}</td>
+                <td>Ряд {{ b.row_num }}, м. {{ b.seat_num }}</td>
+                <td>{{ b.price|int }} ₽</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" style="text-align:center;">Бронирований не найдено</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

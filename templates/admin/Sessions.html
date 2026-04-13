@@ -1,0 +1,35 @@
+{% extends 'admin/base.html' %}
+{% block title %}Сеансы — Админ{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1 class="page-title">Сеансы</h1>
+    <a href="{{ url_for('admin_session_add') }}" class="btn btn--primary">+ Добавить</a>
+</div>
+
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead>
+            <tr><th>ID</th><th>Фильм</th><th>Зал</th><th>Дата</th><th>Время</th><th>Цена</th><th>Действия</th></tr>
+        </thead>
+        <tbody>
+            {% for s in sessions %}
+            <tr>
+                <td>{{ s.id }}</td>
+                <td>{{ s.title }}</td>
+                <td>{{ s.hall_name }}</td>
+                <td>{{ s.date }}</td>
+                <td>{{ s.time }}</td>
+                <td>{{ s.price|int }} ₽</td>
+                <td>
+                    <form method="post" action="{{ url_for('admin_session_delete', session_id=s.id) }}"
+                          onsubmit="return confirm('Удалить сеанс?')" style="display:inline">
+                        <button type="submit" class="btn btn--danger btn--sm">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

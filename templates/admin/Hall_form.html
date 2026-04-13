@@ -1,0 +1,30 @@
+{% extends 'admin/base.html' %}
+{% block title %}Добавить зал — Админ{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1 class="page-title">Добавить зал</h1>
+    <a href="{{ url_for('admin_halls') }}" class="btn btn--outline">← Назад</a>
+</div>
+
+<div class="form-card">
+    <form method="post">
+        <div class="form-group">
+            <label>Название зала</label>
+            <input type="text" name="name" required placeholder="Красный зал">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Количество рядов</label>
+                <input type="number" name="rows" min="1" max="20" required value="6">
+            </div>
+            <div class="form-group">
+                <label>Мест в ряду</label>
+                <input type="number" name="seats_per_row" min="1" max="30" required value="10">
+            </div>
+        </div>
+        <p class="form-hint">Вместимость рассчитается автоматически.</p>
+        <button type="submit" class="btn btn--primary">Создать зал</button>
+    </form>
+</div>
+{% endblock %}

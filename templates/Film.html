@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}{{ film.title }} — КиноМакс{% endblock %}
+
+{% block content %}
+<div class="film-detail">
+    <div class="film-detail__poster">
+        <div class="film-detail__poster-placeholder">{{ film.title[0] }}</div>
+    </div>
+    <div class="film-detail__info">
+        <h1 class="film-detail__title">{{ film.title }}</h1>
+        <div class="film-detail__meta">
+            <span class="badge">{{ film.genre }}</span>
+            <span class="badge badge--outline">{{ film.duration }} мин.</span>
+        </div>
+        <p class="film-detail__desc">{{ film.description }}</p>
+
+        <h2 class="section__title" style="margin-top:2rem;">Расписание сеансов</h2>
+        {% if sessions %}
+        <div class="sessions-list">
+            {% set current_date = namespace(val='') %}
+            {% for s in sessions %}
+                {% if s.date != current_date.val %}
+                    {% set current_date.val = s.date %}
+                    <div class="sessions-date">{{ s.date }}</div>
+                {% endif %}
+                <a href="{{ url_for('session_view', session_id=s.id) }}" class="session-item">
+                    <span class="session-item__time">{{ s.time }}</span>
+                    <span class="session-item__hall">{{ s.hall_name }}</span>
+                    <span class="session-item__price">{{ s.price|int }} ₽</span>
+                    <span class="session-item__btn">Выбрать место →</span>
+                </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-msg">Сеансов пока нет.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

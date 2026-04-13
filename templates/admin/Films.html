@@ -1,0 +1,36 @@
+{% extends 'admin/base.html' %}
+{% block title %}Фильмы — Админ{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1 class="page-title">Фильмы</h1>
+    <a href="{{ url_for('admin_film_add') }}" class="btn btn--primary">+ Добавить</a>
+</div>
+
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>ID</th><th>Название</th><th>Жанр</th><th>Длительность</th><th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for film in films %}
+            <tr>
+                <td>{{ film.id }}</td>
+                <td>{{ film.title }}</td>
+                <td>{{ film.genre }}</td>
+                <td>{{ film.duration }} мин.</td>
+                <td class="td-actions">
+                    <a href="{{ url_for('admin_film_edit', film_id=film.id) }}" class="btn btn--outline btn--sm">Изменить</a>
+                    <form method="post" action="{{ url_for('admin_film_delete', film_id=film.id) }}"
+                          onsubmit="return confirm('Удалить фильм?')" style="display:inline">
+                        <button type="submit" class="btn btn--danger btn--sm">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

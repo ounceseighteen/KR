@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Мои билеты — КиноМакс{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Личный кабинет</h1>
+<div class="cabinet-meta">
+    <p><strong>Имя:</strong> {{ user.name }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+</div>
+
+<h2 class="section__title" style="margin-top:2rem;">Мои бронирования</h2>
+{% if bookings %}
+<div class="bookings-list">
+    {% for b in bookings %}
+    <div class="booking-card">
+        <div class="booking-card__info">
+            <div class="booking-card__title">{{ b.title }}</div>
+            <div class="booking-card__meta">
+                <span>{{ b.date }} в {{ b.time }}</span>
+                <span>{{ b.hall_name }}</span>
+                <span>Ряд {{ b.row_num }}, место {{ b.seat_num }}</span>
+                <span class="booking-card__price">{{ b.price|int }} ₽</span>
+            </div>
+        </div>
+        <form method="post" action="{{ url_for('cancel_booking', booking_id=b.id) }}"
+              onsubmit="return confirm('Отменить бронирование?')">
+            <button type="submit" class="btn btn--danger btn--sm">Отменить</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="empty-msg">У вас пока нет бронирований. <a href="{{ url_for('index') }}">Выбрать фильм →</a></p>
+{% endif %}
+{% endblock %}
