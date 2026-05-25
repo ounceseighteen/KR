@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block title %}Личный кабинет — Мир Кино{% endblock %}
+
+{% block content %}
+<div class="cabinet-layout">
+
+    <!-- Левая карточка профиля -->
+    <div class="cabinet-profile" style="position: relative;">
+        <a href="javascript:void(0)" class="cabinet-profile__settings" onclick="openSettingsModal()" title="Настройки">⚙️</a>
+        <div class="cabinet-profile__name">{{ user.name }}</div>
+        <div class="cabinet-profile__email">{{ user.email }}</div>
+    </div>
+
+    <!-- Правая часть — билеты -->
+    <div class="cabinet-content">
+        <h2 class="section__title">Мои бронирования</h2>
+        {% if bookings %}
+        <div class="bookings-list">
+            {% for b in bookings %}
+            <div class="booking-card">
+                <div class="booking-card__info">
+                    <div class="booking-card__title">{{ b.title }}</div>
+                    <div class="booking-card__meta">
+                        <span>{{ b.date }} в {{ b.time }}</span>
+                        <span>{{ b.hall_name }}</span>
+                        <span>Ряд {{ b.row_num }}, место {{ b.seat_num }}</span>
+                        <span class="booking-card__price">{{ b.price|int }} ₽</span>
+                    </div>
+                </div>
+                <form method="post" action="{{ url_for('cancel_booking', booking_id=b.id) }}"
+                      onsubmit="return confirm('Отменить бронирование?')">
+                    <button type="submit" class="btn btn--danger btn--sm">Отменить</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-msg">У вас пока нет бронирований. <a href="{{ url_for('index') }}">Выбрать фильм →</a></p>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Модалка настроек -->
+<div id="settingsModal" class="settings-overlay" style="display:none;" onclick="closeSettingsModal(event)">
+    <div class="settings-modal">
+        <button class="settings-modal__close" onclick="closeSettingsModal()">&times;</button>
+        <h2 class="settings-modal__title">Настройки профиля</h2>
+
+        <!-- Вкладки -->
+        <div class="settings-tabs">
+            <button class="settings-tab active" onclick="switchSettingsTab('profile', this)">Профиль</button>
+            <button class="settings-tab" onclick="switchSettingsTab('security', this)">Безопасность</button>
+        </div>
+
+        <!-- Профиль -->
+        <div id="settings-profile" class="settings-section">
+            <h3 class="settings-section__title">Изменить имя</h3>
+            <div class="input-group">
+                <input type="text" class="form-input" id="newName" placeholder="Новое имя" value="{{ user.name }}">
+            </div>
+
+            <div class="settings-divider"></div>
+
+            <h3 class="settings-section__title">Изменить email</h3>
+            <div class="input-group">
+                <input type="email" class="form-input" id="newEmail" placeholder="Новый email" value="{{ user.email }}">
+            </div>
+
+            <p id="profileMsg" style="display:none; font-size:0.875rem;"></p>
+            <button class="btn btn--primary btn--full" onclick="saveProfile()">Сохранить</button>
+        </div>
+
+        <!-- Безопасность -->
+        <div id="settings-security" class="settings-section" style="display:none;">
+            <h3 class="settings-section__title">Изменить пароль</h3>
+            <div class="input-group" style="position: relative;">
+                <input type="password" class="form-input" id="oldPassword" placeholder="Текущий пароль" style="padding-right: 40px;">
+                <span class="password-toggle" onclick="togglePass(this)">○</span>
+            </div>
+            <div class="input-group" style="position: relative;">
+                <input type="password" class="form-input" id="newPassword" placeholder="Новый пароль" style="padding-right: 40px;">
+                <span class="password-toggle" onclick="togglePass(this)">○</span>
+            </div>
+            <div class="input-group" style="position: relative;">
+                <input type="password" class="form-input" id="confirmPassword" placeholder="Подтвердите пароль" style="padding-right: 40px;">
+                <span class="password-toggle" onclick="togglePass(this)">○</span>
+            </div>
+
+            <p id="passwordMsg" style="display:none; font-size:0.875rem;"></p>
+            <button class="btn btn--primary btn--full" onclick="savePassword()">Сохранить</button>
+
+            <div class="settings-divider"></div>
+
+            <h3 class="settings-section__title" style="color: var(--danger);">Удалить аккаунт</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted);">Это действие необратимо. Все ваши данные и бронирования будут удалены.</p>
+            <button class="btn btn--danger btn--full" onclick="alert('Функция в разработке')">Удалить аккаунт</button>
+
+            <div class="settings-divider"></div>
+
+            <h3 class="settings-section__title">Выйти из аккаунта</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted);">Завершить текущую сессию.</p>
+            <a href="{{ url_for('logout') }}" class="btn btn--outline btn--full">🚪 Выйти</a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function openSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+function closeSettingsModal(e) {
+    if (!e || e.target === document.getElementById('settingsModal')) {
+        document.getElementById('settingsModal').style.display = 'none';
+        // Сброс при закрытии
+        document.querySelectorAll('.settings-modal .form-input').forEach(i => i.style.borderColor = 'var(--border)');
+        document.querySelectorAll('#oldPassword, #newPassword, #confirmPassword').forEach(i => i.value = '');
+        ['profileMsg', 'passwordMsg'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        // Сбрасываем пароли обратно в тип password
+        document.querySelectorAll('.settings-modal .password-toggle').forEach(btn => btn.textContent = '○');
+        document.querySelectorAll('#oldPassword, #newPassword, #confirmPassword').forEach(i => i.type = 'password');
+    }
+}
+function switchSettingsTab(tab, btn) {
+    document.getElementById('settings-profile').style.display = 'none';
+    document.getElementById('settings-security').style.display = 'none';
+    document.querySelectorAll('.settings-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('settings-' + tab).style.display = 'flex';
+    btn.classList.add('active');
+
+    document.querySelectorAll('.settings-modal .form-input').forEach(i => i.style.borderColor = 'var(--border)');
+    document.querySelectorAll('.settings-modal input[type="password"], .settings-modal input[type="text"]').forEach(i => {
+        if (i.id !== 'newName' && i.id !== 'newEmail') i.value = '';
+    });
+    ['profileMsg', 'passwordMsg'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    document.querySelectorAll('.settings-modal .password-toggle').forEach(btn => btn.textContent = '○');
+    document.querySelectorAll('#oldPassword, #newPassword, #confirmPassword').forEach(i => i.type = 'password');
+}
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSettingsModal();
+});
+
+function showMsg(id, text, ok) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.style.color = ok ? 'var(--success)' : 'var(--danger)';
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 3000);
+}
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function saveProfile() {
+    const nameInput = document.getElementById('newName');
+    const emailInput = document.getElementById('newEmail');
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+
+    if (!name) { showMsg('profileMsg', 'Введите имя', false); nameInput.style.borderColor = 'var(--danger)'; return; }
+    if (!email) { showMsg('profileMsg', 'Введите email', false); emailInput.style.borderColor = 'var(--danger)'; return; }
+    if (!emailRegex.test(email)) { showMsg('profileMsg', 'Некорректный формат email', false); emailInput.style.borderColor = 'var(--danger)'; return; }
+
+    if (!confirm('Сохранить изменения профиля?')) return;
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('email', email);
+
+    fetch('/update_profile', { method: 'POST', body: formData })
+    .then(async r => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.message);
+        showMsg('profileMsg', data.message, true);
+        document.querySelector('.cabinet-profile__name').textContent = name;
+        document.querySelector('.cabinet-profile__email').textContent = email;
+        nameInput.style.borderColor = 'var(--border)';
+        emailInput.style.borderColor = 'var(--border)';
+    })
+    .catch(err => showMsg('profileMsg', err.message, false));
+}
+
+function savePassword() {
+    const oldInput = document.getElementById('oldPassword');
+    const newInput = document.getElementById('newPassword');
+    const confirmInput = document.getElementById('confirmPassword');
+    const old_password = oldInput.value.trim();
+    const new_password = newInput.value.trim();
+    const confirm_password = confirmInput.value.trim();
+
+    if (!old_password) { showMsg('passwordMsg', 'Введите текущий пароль', false); oldInput.style.borderColor = 'var(--danger)'; return; }
+    if (!new_password) { showMsg('passwordMsg', 'Введите новый пароль', false); newInput.style.borderColor = 'var(--danger)'; return; }
+    if (!confirm_password) { showMsg('passwordMsg', 'Подтвердите пароль', false); confirmInput.style.borderColor = 'var(--danger)'; return; }
+    if (new_password !== confirm_password) { showMsg('passwordMsg', 'Пароли не совпадают', false); confirmInput.style.borderColor = 'var(--danger)'; return; }
+
+    if (!confirm('Изменить пароль?')) return;
+
+    const formData = new FormData();
+    formData.append('old_password', old_password);
+    formData.append('new_password', new_password);
+    formData.append('confirm_password', confirm_password);
+
+    fetch('/update_password', { method: 'POST', body: formData })
+    .then(async r => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.message);
+        showMsg('passwordMsg', data.message, true);
+        oldInput.value = ''; newInput.value = ''; confirmInput.value = '';
+        oldInput.style.borderColor = 'var(--border)';
+        newInput.style.borderColor = 'var(--border)';
+        confirmInput.style.borderColor = 'var(--border)';
+    })
+    .catch(err => {
+        showMsg('passwordMsg', err.message, false);
+        oldInput.style.borderColor = 'var(--danger)';
+    });
+}
+
+// Очистка подсветки при вводе
+['newName','newEmail','oldPassword','newPassword','confirmPassword'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => el.style.borderColor = 'var(--border)');
+});
+
+// Показать/скрыть пароль
+function toggleSettingsPassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '●';
+    } else {
+        input.type = 'password';
+        btn.textContent = '○';
+    }
+}
+</script>
+
+{% endblock %}
