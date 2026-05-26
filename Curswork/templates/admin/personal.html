@@ -797,7 +797,7 @@
                     onclick="confirmSale()"
                     disabled
                 >
-                    Оформить билет
+                    Принять оплату
                 </button>
             </div>
         </div>
@@ -1257,7 +1257,9 @@ function openSellModal(sessionId) {
     document.getElementById('sellMsg').style.display = 'none';
     document.getElementById('seatMap').innerHTML = '<p style="color:var(--text-muted)">Загрузка...</p>';
     document.getElementById('sellModal').style.display = 'flex';
-    document.getElementById('confirmSaleBtn').disabled = true;
+    const confirmBtn = document.getElementById('confirmSaleBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Принять оплату';
 
     fetch(`/api/session_seats/${sessionId}`)
     .then(r => r.json())
@@ -1345,7 +1347,7 @@ function confirmSale() {
     const msg = document.getElementById('sellMsg');
     const btn = document.getElementById('confirmSaleBtn');
     const paymentMethod = document.getElementById('paymentMethodSelect').value;
-    const oldText = btn ? btn.textContent : 'Оформить билет';
+    const oldText = btn ? btn.textContent : 'Принять оплату';
 
     function showSellMessage(text, color) {
         if (!msg) return;
@@ -1364,6 +1366,12 @@ function confirmSale() {
     formData.append('promo_id', document.getElementById('promoSelect').value);
     formData.append('payment_method', paymentMethod);
     selectedSeats.forEach(s => formData.append('seat_ids', s.id));
+
+    document.querySelectorAll('#seatMap button').forEach(seatBtn => {
+        seatBtn.disabled = true;
+        seatBtn.style.opacity = '0.65';
+        seatBtn.style.pointerEvents = 'none';
+    });
 
     if (btn) {
         btn.disabled = true;
@@ -1396,6 +1404,11 @@ function confirmSale() {
     })
     .catch(err => {
         showSellMessage(err.message || 'Ошибка', 'var(--danger)');
+        document.querySelectorAll('#seatMap button').forEach(seatBtn => {
+            seatBtn.disabled = false;
+            seatBtn.style.opacity = '';
+            seatBtn.style.pointerEvents = '';
+        });
         if (btn) {
             btn.disabled = false;
             btn.textContent = oldText;

@@ -112,7 +112,6 @@
             <div style="width:200px; display:flex; flex-direction:column; gap:1rem;">
                 <div id="cfSeatInfo" style="font-size:0.85rem; color:var(--text-muted); line-height:1.8;"></div>
                 <p id="cfSelectedSeatText" style="font-size:0.85rem; color:var(--text); display:none;"></p>
-                <p id="cfMsg" style="display:none; font-size:0.8rem;"></p>
                 {% if promotions %}
                 <div id="cfPromoBlock">
                     <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;">Акция</p>
@@ -138,6 +137,7 @@
                     <div id="cfFinalPriceText" style="font-size:1.4rem; font-weight:900; color:var(--accent);">0 ₽</div>
                 </div>
 
+                <p id="cfMsg" style="display:none; font-size:0.8rem;"></p>
                 <button id="cfBtnPay" class="btn btn--primary btn--full" onclick="cfConfirm('pay')" disabled>Купить билет</button>
                 <button id="cfBtnBook" class="btn btn--full" style="border:1px solid var(--border);" onclick="cfConfirm('book')" disabled>Забронировать</button>
                 <p style="font-size:0.72rem; color:var(--text-muted); text-align:center;">Бронь действует 30 минут до начала сеанса</p>
@@ -478,6 +478,19 @@ function cfConfirm(action) {
         msg.style.display = 'block';
     }
 
+    function setCfSeatsLocked(locked) {
+        document.querySelectorAll('#cfSeatMap button').forEach(seatBtn => {
+            seatBtn.disabled = locked;
+            if (locked) {
+                seatBtn.style.opacity = '0.65';
+                seatBtn.style.pointerEvents = 'none';
+            } else {
+                seatBtn.style.opacity = '';
+                seatBtn.style.pointerEvents = '';
+            }
+        });
+    }
+
     function restoreCfButtons() {
         if (payBtn) {
             payBtn.disabled = false;
@@ -487,6 +500,7 @@ function cfConfirm(action) {
             bookBtn.disabled = false;
             bookBtn.textContent = oldBookText || 'Забронировать';
         }
+        setCfSeatsLocked(false);
         cfUpdatePayButtons();
     }
 
@@ -497,6 +511,7 @@ function cfConfirm(action) {
 
     if (payBtn) payBtn.disabled = true;
     if (bookBtn) bookBtn.disabled = true;
+    setCfSeatsLocked(true);
     if (action === 'pay' && payBtn) payBtn.textContent = 'Отправка билетов...';
     if (action === 'book' && bookBtn) bookBtn.textContent = 'Бронирование...';
     if (msg) msg.style.display = 'none';

@@ -337,6 +337,12 @@ function confirmBookedPayment() {
     fd.append('payment_method', method);
     fd.append('promo_id', document.getElementById('bookedPayPromo').value);
 
+    document.querySelectorAll('#bookedPaySeatMap button').forEach(seatBtn => {
+        seatBtn.disabled = true;
+        seatBtn.style.opacity = '0.65';
+        seatBtn.style.pointerEvents = 'none';
+    });
+
     if (btn) {
         btn.disabled = true;
         btn.textContent = 'Отправка билетов...';
@@ -358,6 +364,11 @@ function confirmBookedPayment() {
     })
     .catch(err => {
         showBookedMessage(err.message || 'Ошибка оплаты', 'var(--danger)');
+        document.querySelectorAll('#bookedPaySeatMap button').forEach(seatBtn => {
+            seatBtn.disabled = false;
+            seatBtn.style.opacity = '';
+            seatBtn.style.pointerEvents = '';
+        });
         if (btn) {
             btn.disabled = false;
             btn.textContent = oldText;

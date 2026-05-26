@@ -533,6 +533,19 @@ function cfConfirm(action) {
         msg.style.display = 'block';
     }
 
+    function setCfSeatsLocked(locked) {
+        document.querySelectorAll('#cfSeatMap button').forEach(seatBtn => {
+            seatBtn.disabled = locked;
+            if (locked) {
+                seatBtn.style.opacity = '0.65';
+                seatBtn.style.pointerEvents = 'none';
+            } else {
+                seatBtn.style.opacity = '';
+                seatBtn.style.pointerEvents = '';
+            }
+        });
+    }
+
     function restoreCfButtons() {
         if (payBtn) {
             payBtn.disabled = false;
@@ -542,6 +555,7 @@ function cfConfirm(action) {
             bookBtn.disabled = false;
             bookBtn.textContent = oldBookText || 'Забронировать';
         }
+        setCfSeatsLocked(false);
         cfUpdatePayButtons();
     }
 
@@ -552,6 +566,7 @@ function cfConfirm(action) {
 
     if (payBtn) payBtn.disabled = true;
     if (bookBtn) bookBtn.disabled = true;
+    setCfSeatsLocked(true);
     if (action === 'pay' && payBtn) payBtn.textContent = 'Отправка билетов...';
     if (action === 'book' && bookBtn) bookBtn.textContent = 'Бронирование...';
     if (msg) msg.style.display = 'none';
