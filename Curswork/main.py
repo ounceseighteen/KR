@@ -418,6 +418,129 @@ def send_confirmation_email(email, subject, intro_text, code):
     """
     mail.send(msg)
 
+
+
+
+def make_ticket_code(title, film_id, booking_id):
+    """Код билета как в personal: первая буква фильма + id фильма + '-' + id бронирования."""
+    first_letter = (title or 'Б')[0].upper()
+    return f"{first_letter}{film_id}-{booking_id}"
+
+
+def send_paid_tickets_email(recipient_email, booking_ids):
+    """Отправляет одно письмо по одному или нескольким ОПЛАЧЕННЫМ билетам."""
+    if not recipient_email or not booking_ids:
+        return
+
+    booking_ids = [int(x) for x in booking_ids if x]
+    if not booking_ids:
+        return
+
+    conn = get_db()
+    placeholders = ','.join('?' for _ in booking_ids)
+    rows = conn.execute(f"""
+        SELECT b.id, b.custom_code, b.final_price, b.payment_method,
+               u.name as user_name, u.email as user_email,
+               f.title, f.id as film_id, f.poster, s.date, s.time, h.name as hall_name,
+               seats.row_num, seats.seat_num, p.title as promo_title, p.discount as promo_discount
+        FROM bookings b
+        JOIN users u ON u.id = b.user_id
+        JOIN sessions s ON s.id = b.session_id
+        JOIN films f ON f.id = s.film_id
+        JOIN halls h ON h.id = s.hall_id
+        JOIN seats ON seats.id = b.seat_id
+        LEFT JOIN promotions p ON p.id = b.promo_id
+        WHERE b.id IN ({placeholders}) AND b.status='paid'
+        ORDER BY seats.row_num, seats.seat_num
+    """, booking_ids).fetchall()
+    conn.close()
+
+    if not rows:
+        return
+
+    first = rows[0]
+    poster_filename = first['poster'] or ''
+    poster_path = os.path.join(app.root_path, 'static', 'posters', poster_filename) if poster_filename else ''
+    has_poster = bool(poster_filename and os.path.exists(poster_path))
+
+    try:
+        date_text = datetime.strptime(first['date'], '%Y-%m-%d').strftime('%d.%m.%Y')
+    except Exception:
+        date_text = first['date']
+
+    seats_text = ', '.join([f"ряд {r['row_num']}, место {r['seat_num']}" for r in rows])
+    codes_text = '<br>'.join([make_ticket_code(r['title'], r['film_id'], r['id']) for r in rows])
+    total_price = sum(float(r['final_price'] or 0) for r in rows)
+    payment_text = 'Бонусная карта' if first['payment_method'] == 'bonus' else 'Банковская карта'
+
+    promo_html = ''
+    if first['promo_title']:
+        promo_html = f"""
+            <tr><td style="padding:7px 0; color:#7a8399;">Акция</td><td style="padding:7px 0; color:#e8eaf0; font-weight:700;">{first['promo_title']} −{first['promo_discount'] or 0}%</td></tr>
+        """
+
+    poster_html = """
+        <div style="width:320px; height:500px; border-radius:12px; background:#1e2330; display:flex; align-items:center; justify-content:center; color:#e8a020; font-size:44px; font-weight:800;">🎬</div>
+    """
+    if has_poster:
+        poster_html = '<img src="cid:ticket_poster" alt="Афиша" style="width:320px; height:500px; object-fit:cover; border-radius:12px; display:block;">'
+
+    subject = f"Ваш билет в Мир Кино — {first['title']}"
+    msg = Message(subject, recipients=[recipient_email])
+    msg.html = f"""
+        <div style="margin:0; padding:32px; background:#0d0f14; font-family:Arial, sans-serif; color:#e8eaf0;">
+            <div style="max-width:720px; margin:0 auto;">
+                <div style="text-align:center; margin-bottom:22px;">
+                    <div style="font-size:24px; font-weight:900; color:#e8a020; letter-spacing:1px;">МИР КИНО</div>
+                </div>
+
+                <div style="background:#161a23; border:1px solid #2a2f3e; border-radius:16px; padding:22px;">
+                    <div style="display:flex; gap:18px; align-items:flex-start;">
+                        <div style="flex:0 0 320px;">{poster_html}</div>
+                        <div style="flex:1; min-width:0; margin-left:22px;">
+                            <h2 style="margin:0 0 14px; color:#e8eaf0; font-size:24px; line-height:1.25;">{first['title']}</h2>
+                            <table style="width:100%; border-collapse:collapse; font-size:15px;">
+                                <tr><td style="padding:7px 0; color:#7a8399; width:130px;">Дата</td><td style="padding:7px 0; color:#e8eaf0; font-weight:700;">{date_text}</td></tr>
+                                <tr><td style="padding:7px 0; color:#7a8399;">Время</td><td style="padding:7px 0; color:#e8eaf0; font-weight:700;">{first['time']}</td></tr>
+                                <tr><td style="padding:7px 0; color:#7a8399;">Зал</td><td style="padding:7px 0; color:#e8eaf0; font-weight:700;">{first['hall_name']}</td></tr>
+                                <tr><td style="padding:7px 0; color:#7a8399;">Места</td><td style="padding:7px 0; color:#e8eaf0; font-weight:700;">{seats_text}</td></tr>
+                                <tr><td style="padding:7px 0; color:#7a8399;">Оплата</td><td style="padding:7px 0; color:#e8eaf0; font-weight:700;">{payment_text}</td></tr>
+                                {promo_html}
+                                <tr><td style="padding:7px 0; color:#7a8399;">Сумма</td><td style="padding:7px 0; color:#e8a020; font-weight:900; font-size:18px;">{int(round(total_price))} ₽</td></tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px; padding:14px; background:#0d0f14; border:1px solid #2a2f3e; border-radius:12px; color:#e8eaf0; font-size:14px; line-height:1.7;">
+                        <div style="color:#7a8399; margin-bottom:6px;">Коды билетов:</div>
+                        {codes_text}
+                    </div>
+                </div>
+
+                <div style="text-align:center; margin-top:18px; color:#4a5066; font-size:12px;">
+                    Покажите письмо или код билета при посещении кинотеатра.<br>
+                    © 2026 Кинотеатр «Мир Кино»
+                </div>
+            </div>
+        </div>
+    """
+
+    if has_poster:
+        with open(poster_path, 'rb') as img:
+            ext = os.path.splitext(poster_filename)[1].lower().lstrip('.') or 'jpg'
+            mimetype = 'image/png' if ext == 'png' else 'image/jpeg'
+            msg.attach(
+                filename=poster_filename,
+                content_type=mimetype,
+                data=img.read(),
+                disposition='inline',
+                headers={'Content-ID': '<ticket_poster>'}
+            )
+
+    try:
+        mail.send(msg)
+    except Exception as e:
+        print('Ошибка отправки письма с билетами:', e)
 # ─────────────────────────────────────────────
 # ПУБЛИЧНАЯ ЧАСТЬ
 # ─────────────────────────────────────────────
@@ -962,11 +1085,26 @@ def confirm_payment(booking_id):
         flash('У вас нет прав для подтверждения оплаты.', 'danger')
         return redirect(url_for('personal'))
 
+    recipient = conn.execute('''
+        SELECT u.email, b.custom_code, f.title as film_title, f.id as film_id
+        FROM bookings b
+        JOIN users u ON u.id = b.user_id
+        JOIN sessions s ON s.id = b.session_id
+        JOIN films f ON f.id = s.film_id
+        WHERE b.id=?
+    ''', (booking_id,)).fetchone()
+
     # Обновляем статус билета на "оплачен"
     conn.execute("UPDATE bookings SET status = 'paid', payment_method = COALESCE(payment_method, 'bank') WHERE id = ?", (booking_id,))
+    if recipient and not recipient['custom_code']:
+        conn.execute('UPDATE bookings SET custom_code=? WHERE id=?',
+                     (make_ticket_code(recipient['film_title'], recipient['film_id'], booking_id), booking_id))
     award_bonus_for_booking(conn, booking_id)
     conn.commit()
     conn.close()
+
+    if recipient:
+        send_paid_tickets_email(recipient['email'], [booking_id])
 
     return redirect(url_for('personal') + '?tab=bookings')
 
@@ -1548,7 +1686,12 @@ def sell_ticket():
         conn.close()
         return jsonify({'error': 'Клиент не найден'}), 404
 
-    sess = conn.execute('SELECT price FROM sessions WHERE id=?', (session_id,)).fetchone()
+    sess = conn.execute('''
+        SELECT s.price, f.id as film_id, f.title as film_title
+        FROM sessions s
+        JOIN films f ON f.id = s.film_id
+        WHERE s.id=?
+    ''', (session_id,)).fetchone()
     base_price = sess['price']
 
     discount = 0
@@ -1569,6 +1712,8 @@ def sell_ticket():
             conn.close()
             return jsonify({'error': 'Недостаточно бонусов на карте клиента'}), 400
 
+    paid_booking_ids = []
+
     for seat_id in seat_ids:
         existing = conn.execute(
             "SELECT id FROM bookings WHERE session_id=? AND seat_id=? AND status != 'cancelled'",
@@ -1576,22 +1721,28 @@ def sell_ticket():
         if existing:
             conn.close()
             return jsonify({'error': 'Место уже занято'}), 400
-        custom_code = uuid.uuid4().hex[:8].upper()
         cur = conn.execute('''INSERT INTO bookings
             (user_id, session_id, seat_id, booked_at, status, custom_code, promo_id, final_price, payment_method)
             VALUES (?,?,?,?,?,?,?,?,?)''',
             (client['id'], session_id, int(seat_id),
-             datetime.now().isoformat(), 'paid', custom_code, promo_id, final_price, payment_method))
+             datetime.now().isoformat(), 'paid', None, promo_id, final_price, payment_method))
+
+        booking_id = cur.lastrowid
+        custom_code = make_ticket_code(sess['film_title'], sess['film_id'], booking_id)
+        conn.execute('UPDATE bookings SET custom_code=? WHERE id=?', (custom_code, booking_id))
+
+        paid_booking_ids.append(booking_id)
 
         if payment_method == 'bonus':
-            ok, err = spend_bonuses_for_booking(conn, client['id'], cur.lastrowid, final_price)
+            ok, err = spend_bonuses_for_booking(conn, client['id'], booking_id, final_price)
             if not ok:
                 conn.close()
                 return jsonify({'error': err}), 400
-            award_bonus_for_booking(conn, cur.lastrowid)
+            award_bonus_for_booking(conn, booking_id)
 
     conn.commit()
     conn.close()
+    send_paid_tickets_email(client_email, paid_booking_ids)
     return jsonify({'ok': True})
 
 @app.route('/api/film_sessions/<int:film_id>')
@@ -1683,7 +1834,12 @@ def client_book():
         return jsonify({'error': 'Выберите способ оплаты'}), 400
 
     conn = get_db()
-    sess = conn.execute('SELECT price FROM sessions WHERE id=?', (session_id,)).fetchone()
+    sess = conn.execute('''
+        SELECT s.price, f.id as film_id, f.title as film_title
+        FROM sessions s
+        JOIN films f ON f.id = s.film_id
+        WHERE s.id=?
+    ''', (session_id,)).fetchone()
     base_price = sess['price']
 
     discount = 0
@@ -1705,6 +1861,8 @@ def client_book():
             conn.close()
             return jsonify({'error': 'Недостаточно бонусов на карте'}), 400
 
+    paid_booking_ids = []
+
     for seat_id in seat_ids:
         existing = conn.execute(
             "SELECT id FROM bookings WHERE session_id=? AND seat_id=? AND status != 'cancelled'",
@@ -1719,15 +1877,20 @@ def client_book():
             (user['id'], session_id, int(seat_id),
              datetime.now().isoformat(), status, custom_code, promo_id, final_price,
              payment_method if status == 'paid' else None))
+        if status == 'paid':
+            paid_booking_ids.append(cur.lastrowid)
+
         if status == 'paid' and payment_method == 'bonus':
             ok, err = spend_bonuses_for_booking(conn, user['id'], cur.lastrowid, final_price)
             if not ok:
                 conn.close()
                 return jsonify({'error': err}), 400
-            award_bonus_for_booking(conn, cur.lastrowid)
+            award_bonus_for_booking(conn, booking_id)
 
     conn.commit()
     conn.close()
+    if paid_booking_ids:
+        send_paid_tickets_email(user['email'], paid_booking_ids)
     return jsonify({'ok': True})
 
 
@@ -1798,6 +1961,7 @@ def client_pay_booking(booking_id):
 
     conn.commit()
     conn.close()
+    send_paid_tickets_email(user['email'], [booking_id])
     return jsonify({'ok': True})
 
 # --- Залы ---
