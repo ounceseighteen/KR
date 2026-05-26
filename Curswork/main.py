@@ -1096,6 +1096,36 @@ def send_registration_code():
         return {"status": "error", "message": "Ошибка при отправке письма. Проверьте настройки почты."}, 500
 
 
+@app.route('/resend_registration_code', methods=['POST'])
+def resend_registration_code():
+    pending = session.get('pending_registration')
+    if not pending or not pending.get('email'):
+        return {"status": "error", "message": "Данные регистрации не найдены. Заполните форму ещё раз."}, 400
+
+    email = pending['email']
+    conn = get_db()
+    existing = conn.execute('SELECT id FROM users WHERE email=?', (email,)).fetchone()
+    conn.close()
+    if existing:
+        return {"status": "error", "message": "Email уже зарегистрирован"}, 400
+
+    code = str(random.randint(100000, 999999))
+    session['registration_code'] = code
+    session['registration_time'] = time.time()
+
+    try:
+        send_confirmation_email(
+            email,
+            "Код подтверждения регистрации - Мир Кино",
+            "Для завершения регистрации введите код подтверждения:",
+            code
+        )
+        return {"status": "success", "message": "Код отправлен"}
+    except Exception as e:
+        print(f"Ошибка SMTP при повторной отправке кода регистрации: {e}")
+        return {"status": "error", "message": "Ошибка при отправке письма. Проверьте настройки почты."}, 500
+
+
 @app.route('/verify_registration_code', methods=['POST'])
 def verify_registration_code():
     input_code = request.form.get('code', '').strip()

@@ -251,6 +251,9 @@
                     </div>
                 </div>
 
+
+                <div id="registrationVerifyTab" class="modal__tab-content"></div>
+
             </div>
         </div>
     </div>
@@ -355,6 +358,21 @@ function handleForgot(event) {
 }
 
 let _resendInterval = null;
+
+function resetRegistrationButton() {
+    const btn = document.getElementById('regSubmitBtn');
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Зарегистрироваться';
+    }
+}
+
+function clearAuthTimers() {
+    if (_resendInterval) {
+        clearInterval(_resendInterval);
+        _resendInterval = null;
+    }
+}
 
 function resendCode(email) {
     const link = document.getElementById('resendLink');
@@ -552,6 +570,15 @@ function resetAuthForms() {
     // 1. Сбрасываем значения всех полей ввода
     modal.querySelectorAll('form').forEach(f => f.reset());
 
+    clearAuthTimers();
+    resetRegistrationButton();
+
+    // Возвращаем обычную форму регистрации, если перед этим показывался ввод кода
+    const regFormReset = document.getElementById('registerForm');
+    const regVerifyTabReset = document.getElementById('registrationVerifyTab');
+    if (regFormReset) regFormReset.style.display = 'flex';
+    if (regVerifyTabReset) regVerifyTabReset.innerHTML = '';
+
     // 2. Скрываем все сообщения об ошибках
     modal.querySelectorAll('.side-error').forEach(e => e.style.display = 'none');
     const serverErr = document.getElementById('serverErrorMessage');
@@ -614,7 +641,7 @@ function showTab(tabName) {
     const tabsHeader = document.querySelector('.modal__tabs');
 
     // 2. Если переходим в 'forgot', скрываем шапку, иначе показываем
-    if (tabName === 'forgot') {
+    if (tabName === 'forgot' || tabName === 'registrationVerify') {
         if (tabsHeader) tabsHeader.style.display = 'none';
     } else {
         if (tabsHeader) tabsHeader.style.display = 'flex';
@@ -689,8 +716,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (regForm) {
         regForm.addEventListener('submit', function(e) {
+            e.preventDefault();
             let hasError = false;
             const emailRegex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+
+            // Сбрасываем старые ошибки
+            [nameInput, emailInput, passInput, confirmInput].forEach(input => {
+                if (input) input.style.borderColor = 'var(--border)';
+            });
+            [nameError, emailError, passError, agreeError].forEach(err => {
+                if (err) err.style.display = 'none';
+            });
 
             // 1. Проверка Имени
             if (nameInput.value.trim() === "") {
@@ -720,21 +756,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (p1 === "") {
                 passError.textContent = "Введите пароль";
                 passError.style.display = 'block';
-                // Подсвечиваем оба
                 passInput.style.borderColor = 'var(--danger)';
                 confirmInput.style.borderColor = 'var(--danger)';
                 hasError = true;
             } else if (p1.length < 6) {
                 passError.textContent = "Минимум 6 символов";
                 passError.style.display = 'block';
-                // Подсвечиваем оба
                 passInput.style.borderColor = 'var(--danger)';
                 confirmInput.style.borderColor = 'var(--danger)';
                 hasError = true;
             } else if (p1 !== p2) {
                 passError.textContent = "Пароли не совпадают";
                 passError.style.display = 'block';
-                // Подсвечиваем оба
                 passInput.style.borderColor = 'var(--danger)';
                 confirmInput.style.borderColor = 'var(--danger)';
                 hasError = true;
@@ -746,11 +779,169 @@ document.addEventListener('DOMContentLoaded', function() {
                 hasError = true;
             }
 
-            if (hasError) {
-                e.preventDefault();
+            if (hasError) return;
+
+            const btn = document.getElementById('regSubmitBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Отправка кода...';
             }
+
+            const formData = new FormData(regForm);
+            fetch('/send_registration_code', { method: 'POST', body: formData })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Ошибка сервера');
+                return data;
+            })
+            .then(() => {
+                window.renderRegistrationCodeForm(emailInput.value.trim());
+            })
+            .catch(err => {
+                const serverErr = document.getElementById('serverErrorMessage');
+                if (serverErr) {
+                    serverErr.textContent = err.message;
+                    serverErr.style.display = 'block';
+                    serverErr.style.top = (document.querySelector('.modal__content').getBoundingClientRect().top - document.getElementById('authModal').getBoundingClientRect().top - serverErr.offsetHeight - 10) + 'px';
+                }
+                if (err.message.includes('Email')) {
+                    emailError.textContent = err.message;
+                    emailError.style.display = 'block';
+                    emailInput.style.borderColor = 'var(--danger)';
+                }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Зарегистрироваться';
+                }
+            });
         });
     }
+
+    
+window.renderRegistrationCodeForm = function(email) {
+    const verifyTab = document.getElementById('registrationVerifyTab');
+    const tabsHeader = document.querySelector('.modal__tabs');
+    if (!verifyTab) return;
+
+    resetRegistrationButton();
+    if (tabsHeader) tabsHeader.style.display = 'none';
+
+    document.querySelectorAll('.modal__tab-content').forEach(c => c.classList.remove('active'));
+    verifyTab.classList.add('active');
+    document.querySelectorAll('.modal__tab').forEach(t => t.classList.remove('active'));
+
+    verifyTab.innerHTML = `
+        <div class="auth-form" style="text-align: center;">
+            <h2 class="modal__title">Код отправлен!</h2>
+            <p class="modal__subtitle">Проверьте почту <b>${email}</b></p>
+            <div class="input-group">
+                <input type="text" id="registrationCode" class="form-input" placeholder="Код из письма"
+                       inputmode="numeric" maxlength="6"
+                       style="text-align: center; font-size: 1.2rem; letter-spacing: 3px;">
+                <div id="registrationCodeError" class="side-error"></div>
+            </div>
+            <button type="button" class="btn btn--primary btn--full" onclick="verifyRegistrationCode()">Подтвердить</button>
+            <p id="regResendTimer" style="margin-top: 12px; font-size: 0.85rem; color: var(--text-muted);">
+                Отправить ещё раз через <span id="regTimerCount">60</span> сек
+            </p>
+            <a id="regResendLink" href="javascript:void(0)" onclick="resendRegistrationCode()"
+               style="display: none; margin-top: 12px; font-size: 0.85rem; color: var(--accent); text-decoration: none;">
+                Отправить ещё раз
+            </a>
+        </div>
+    `;
+
+    const codeInput = document.getElementById('registrationCode');
+    if (codeInput) {
+        codeInput.focus();
+        codeInput.addEventListener('input', () => {
+            codeInput.value = codeInput.value.replace(/\D/g, '');
+            const err = document.getElementById('registrationCodeError');
+            if (err) err.style.display = 'none';
+            codeInput.style.borderColor = 'var(--border)';
+        });
+    }
+
+    startRegistrationResendTimer();
+};
+
+window.startRegistrationResendTimer = function() {
+    if (_resendInterval) clearInterval(_resendInterval);
+    let seconds = 60;
+    _resendInterval = setInterval(() => {
+        seconds--;
+        const counter = document.getElementById('regTimerCount');
+        if (counter) counter.textContent = seconds;
+        if (seconds <= 0) {
+            clearInterval(_resendInterval);
+            _resendInterval = null;
+            const timer = document.getElementById('regResendTimer');
+            const link = document.getElementById('regResendLink');
+            if (timer) timer.style.display = 'none';
+            if (link) link.style.display = 'block';
+        }
+    }, 1000);
+};
+
+window.verifyRegistrationCode = function() {
+    const codeInput = document.getElementById('registrationCode');
+    const errorBlock = document.getElementById('registrationCodeError');
+    if (!codeInput) return;
+
+    const code = codeInput.value.trim();
+    if (!code) {
+        errorBlock.textContent = 'Введите код';
+        errorBlock.style.display = 'block';
+        codeInput.style.borderColor = 'var(--danger)';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('code', code);
+
+    fetch('/verify_registration_code', { method: 'POST', body: formData })
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Неверный код');
+        return data;
+    })
+    .then(data => {
+        window.location.href = data.redirect || '/';
+    })
+    .catch(err => {
+        errorBlock.textContent = err.message;
+        errorBlock.style.display = 'block';
+        codeInput.style.borderColor = 'var(--danger)';
+    });
+};
+
+window.resendRegistrationCode = function() {
+    const link = document.getElementById('regResendLink');
+    const timer = document.getElementById('regResendTimer');
+    const counter = document.getElementById('regTimerCount');
+    const errorBlock = document.getElementById('registrationCodeError');
+
+    if (link) link.style.display = 'none';
+    if (timer) timer.style.display = 'block';
+    if (counter) counter.textContent = '...';
+    if (errorBlock) errorBlock.style.display = 'none';
+
+    fetch('/resend_registration_code', { method: 'POST' })
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Ошибка сервера');
+        return data;
+    })
+    .then(() => startRegistrationResendTimer())
+    .catch(err => {
+        if (timer) timer.style.display = 'none';
+        if (link) link.style.display = 'block';
+        if (errorBlock) {
+            errorBlock.textContent = err.message;
+            errorBlock.style.display = 'block';
+        }
+    });
+};
 
     // ЭЛЕМЕНТЫ ВХОДА
     const loginForm = document.getElementById('loginForm');
