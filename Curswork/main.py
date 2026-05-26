@@ -1743,7 +1743,10 @@ def sell_ticket():
     conn.commit()
     conn.close()
     send_paid_tickets_email(client_email, paid_booking_ids)
-    return jsonify({'ok': True})
+    return jsonify({
+        'ok': True,
+        'message': 'Билеты оплачены и отправлены на указанную почту'
+    })
 
 @app.route('/api/film_sessions/<int:film_id>')
 @login_required
@@ -1870,18 +1873,22 @@ def client_book():
         if existing:
             conn.close()
             return jsonify({'error': 'Место уже занято'}), 400
-        custom_code = uuid.uuid4().hex[:8].upper()
         cur = conn.execute('''INSERT INTO bookings
             (user_id, session_id, seat_id, booked_at, status, custom_code, promo_id, final_price, payment_method)
             VALUES (?,?,?,?,?,?,?,?,?)''',
             (user['id'], session_id, int(seat_id),
-             datetime.now().isoformat(), status, custom_code, promo_id, final_price,
+             datetime.now().isoformat(), status, None, promo_id, final_price,
              payment_method if status == 'paid' else None))
+
+        booking_id = cur.lastrowid
+        custom_code = make_ticket_code(sess['film_title'], sess['film_id'], booking_id)
+        conn.execute('UPDATE bookings SET custom_code=? WHERE id=?', (custom_code, booking_id))
+
         if status == 'paid':
-            paid_booking_ids.append(cur.lastrowid)
+            paid_booking_ids.append(booking_id)
 
         if status == 'paid' and payment_method == 'bonus':
-            ok, err = spend_bonuses_for_booking(conn, user['id'], cur.lastrowid, final_price)
+            ok, err = spend_bonuses_for_booking(conn, user['id'], booking_id, final_price)
             if not ok:
                 conn.close()
                 return jsonify({'error': err}), 400
@@ -1891,7 +1898,10 @@ def client_book():
     conn.close()
     if paid_booking_ids:
         send_paid_tickets_email(user['email'], paid_booking_ids)
-    return jsonify({'ok': True})
+    return jsonify({
+        'ok': True,
+        'message': 'Билеты оплачены и отправлены на вашу почту' if paid_booking_ids else 'Места забронированы'
+    })
 
 
 @app.route('/client/pay_booking/<int:booking_id>', methods=['POST'])
@@ -1962,7 +1972,10 @@ def client_pay_booking(booking_id):
     conn.commit()
     conn.close()
     send_paid_tickets_email(user['email'], [booking_id])
-    return jsonify({'ok': True})
+    return jsonify({
+        'ok': True,
+        'message': 'Билеты оплачены и отправлены на вашу почту'
+    })
 
 # --- Залы ---
 @app.route('/admin/halls')

@@ -164,7 +164,7 @@
                 </div>
 
                 <p id="bookedPayMsg" style="display:none; font-size:0.8rem;"></p>
-                <button id="bookedPayBtn" class="btn btn--primary btn--full" onclick="confirmBookedPayment()">Купить билет</button>
+                <button id="bookedPayBtn" class="btn btn--primary btn--full" onclick="confirmBookedPayment()">Оплатить билет</button>
             </div>
         </div>
     </div>
@@ -318,38 +318,50 @@ function confirmBookedPayment() {
     if (!bookedPaymentData) return;
     const method = document.getElementById('bookedPayMethod').value;
     const msg = document.getElementById('bookedPayMsg');
-    if (!method) {
-        msg.textContent = 'Выберите способ оплаты';
-        msg.style.color = 'var(--danger)';
+    const btn = document.getElementById('bookedPayBtn');
+    const oldText = btn ? btn.textContent : 'Купить билет';
+
+    function showBookedMessage(text, color) {
+        if (!msg) return;
+        msg.textContent = text;
+        msg.style.color = color;
         msg.style.display = 'block';
+    }
+
+    if (!method) {
+        showBookedMessage('Выберите способ оплаты', 'var(--danger)');
         return;
     }
 
     const fd = new FormData();
     fd.append('payment_method', method);
     fd.append('promo_id', document.getElementById('bookedPayPromo').value);
-    document.getElementById('bookedPayBtn').disabled = true;
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Отправка билетов...';
+    }
+    if (msg) msg.style.display = 'none';
 
     fetch(`/client/pay_booking/${bookedPaymentData.bookingId}`, { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok) {
-            msg.textContent = '✅ Билет оплачен!';
-            msg.style.color = 'var(--success)';
-            msg.style.display = 'block';
-            setTimeout(() => window.location.reload(), 800);
-        } else {
-            msg.textContent = data.error || 'Ошибка оплаты';
-            msg.style.color = 'var(--danger)';
-            msg.style.display = 'block';
-            document.getElementById('bookedPayBtn').disabled = false;
-        }
+    .then(async r => {
+        const data = await r.json();
+        if (!r.ok || !data.ok) throw new Error(data.error || 'Ошибка оплаты');
+        return data;
     })
-    .catch(() => {
-        msg.textContent = 'Ошибка оплаты';
-        msg.style.color = 'var(--danger)';
-        msg.style.display = 'block';
-        document.getElementById('bookedPayBtn').disabled = false;
+    .then(data => {
+        showBookedMessage(data.message || 'Билеты оплачены и отправлены на вашу почту', 'var(--success)');
+        setTimeout(() => {
+            document.getElementById('bookedPayModal').style.display = 'none';
+            window.location.reload();
+        }, 900);
+    })
+    .catch(err => {
+        showBookedMessage(err.message || 'Ошибка оплаты', 'var(--danger)');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = oldText;
+        }
     });
 }
 

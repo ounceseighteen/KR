@@ -1343,10 +1343,20 @@ function selectSeat(seatId, rowNum, seatNum, btn) {
 function confirmSale() {
     const email = document.getElementById('clientEmail').value.trim();
     const msg = document.getElementById('sellMsg');
+    const btn = document.getElementById('confirmSaleBtn');
     const paymentMethod = document.getElementById('paymentMethodSelect').value;
-    if (!selectedSeats.length) { msg.textContent = 'Выберите место'; msg.style.color = 'var(--danger)'; msg.style.display = 'block'; return; }
-    if (!email) { msg.textContent = 'Введите email клиента'; msg.style.color = 'var(--danger)'; msg.style.display = 'block'; return; }
-    if (!paymentMethod) { msg.textContent = 'Выберите способ оплаты'; msg.style.color = 'var(--danger)'; msg.style.display = 'block'; return; }
+    const oldText = btn ? btn.textContent : 'Оформить билет';
+
+    function showSellMessage(text, color) {
+        if (!msg) return;
+        msg.textContent = text;
+        msg.style.color = color;
+        msg.style.display = 'block';
+    }
+
+    if (!selectedSeats.length) { showSellMessage('Выберите место', 'var(--danger)'); return; }
+    if (!email) { showSellMessage('Введите email клиента', 'var(--danger)'); return; }
+    if (!paymentMethod) { showSellMessage('Выберите способ оплаты', 'var(--danger)'); return; }
 
     const formData = new FormData();
     formData.append('session_id', currentSessionId);
@@ -1355,25 +1365,41 @@ function confirmSale() {
     formData.append('payment_method', paymentMethod);
     selectedSeats.forEach(s => formData.append('seat_ids', s.id));
 
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Отправка билетов...';
+    }
+    if (msg) msg.style.display = 'none';
+
     fetch('/admin/sell_ticket', { method: 'POST', body: formData })
     .then(async r => {
         const data = await r.json();
-        if (!r.ok) throw new Error(data.error);
-        msg.textContent = `Оформлено билетов: ${selectedSeats.length}`;
-        msg.style.color = 'var(--success)';
-        msg.style.display = 'block';
-        // Помечаем места как занятые
+        if (!r.ok || !data.ok) throw new Error(data.error || 'Ошибка');
+        return data;
+    })
+    .then(data => {
+        showSellMessage(data.message || 'Билеты оплачены и отправлены на указанную почту', 'var(--success)');
         selectedSeats.forEach(s => {
-            const btn = document.getElementById(`seat-${s.id}`);
-            if (btn) { btn.style.background = 'var(--border)'; btn.style.color = 'var(--text-muted)'; btn.onclick = null; btn.style.cursor = 'not-allowed'; }
+            const seatBtn = document.getElementById(`seat-${s.id}`);
+            if (seatBtn) {
+                seatBtn.style.background = 'var(--border)';
+                seatBtn.style.color = 'var(--text-muted)';
+                seatBtn.onclick = null;
+                seatBtn.style.cursor = 'not-allowed';
+            }
         });
         selectedSeats = [];
         document.getElementById('selectedSeatText').style.display = 'none';
+        setTimeout(() => {
+            document.getElementById('sellModal').style.display = 'none';
+        }, 900);
     })
     .catch(err => {
-        msg.textContent = err.message;
-        msg.style.color = 'var(--danger)';
-        msg.style.display = 'block';
+        showSellMessage(err.message || 'Ошибка', 'var(--danger)');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = oldText;
+        }
     });
 }
 

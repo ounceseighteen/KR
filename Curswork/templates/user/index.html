@@ -518,36 +518,74 @@ function cfUpdateTotalPrice() {
 function cfConfirm(action) {
     if (!cfIsLoggedIn) return;
     if (!window.cfSelectedSeats || window.cfSelectedSeats.length === 0 || !cfSelectedSessionId) return;
+
     const msg = document.getElementById('cfMsg');
     const paymentMethod = document.getElementById('cfPaymentMethod');
-    if (action === 'pay' && paymentMethod && !paymentMethod.value) {
-        msg.textContent = 'Выберите способ оплаты';
-        msg.style.color = 'var(--danger)';
+    const payBtn = document.getElementById('cfBtnPay');
+    const bookBtn = document.getElementById('cfBtnBook');
+    const oldPayText = payBtn ? payBtn.textContent : '';
+    const oldBookText = bookBtn ? bookBtn.textContent : '';
+
+    function showCfMessage(text, color) {
+        if (!msg) return;
+        msg.textContent = text;
+        msg.style.color = color;
         msg.style.display = 'block';
+    }
+
+    function restoreCfButtons() {
+        if (payBtn) {
+            payBtn.disabled = false;
+            payBtn.textContent = oldPayText || 'Купить билет';
+        }
+        if (bookBtn) {
+            bookBtn.disabled = false;
+            bookBtn.textContent = oldBookText || 'Забронировать';
+        }
+        cfUpdatePayButtons();
+    }
+
+    if (action === 'pay' && paymentMethod && !paymentMethod.value) {
+        showCfMessage('Выберите способ оплаты', 'var(--danger)');
         return;
     }
+
+    if (payBtn) payBtn.disabled = true;
+    if (bookBtn) bookBtn.disabled = true;
+    if (action === 'pay' && payBtn) payBtn.textContent = 'Отправка билетов...';
+    if (action === 'book' && bookBtn) bookBtn.textContent = 'Бронирование...';
+    if (msg) msg.style.display = 'none';
 
     const fd = new FormData();
     fd.append('session_id', cfSelectedSessionId);
     fd.append('action', action);
-    fd.append('promo_id', document.getElementById('cfPromoSelect').value);
+    const promoSelect = document.getElementById('cfPromoSelect');
+    if (promoSelect) fd.append('promo_id', promoSelect.value);
     if (paymentMethod) fd.append('payment_method', paymentMethod.value);
     window.cfSelectedSeats.forEach(s => fd.append('seat_ids', s.id));
 
     fetch('/client/book', { method: 'POST', body: fd })
-    .then(r => r.json())
+    .then(async r => {
+        const data = await r.json();
+        if (!r.ok || !data.ok) throw new Error(data.error || 'Ошибка');
+        return data;
+    })
     .then(data => {
-        if (data.ok) {
-            msg.textContent = action === 'pay' ? '✅ Билеты куплены!' : '✅ Места забронированы!';
-            msg.style.color = 'var(--success)';
-            msg.style.display = 'block';
-            document.getElementById('cfBtnPay').disabled = true;
-            document.getElementById('cfBtnBook').disabled = true;
-        } else {
-            msg.textContent = data.error || 'Ошибка';
-            msg.style.color = 'var(--danger)';
-            msg.style.display = 'block';
+        showCfMessage(
+            action === 'pay' ? 'Билеты оплачены и отправлены на вашу почту' : (data.message || 'Места забронированы'),
+            'var(--success)'
+        );
+
+        if (action === 'pay') {
+            setTimeout(() => {
+                const seatModal = document.getElementById('cfSeatModal');
+                if (seatModal) seatModal.style.display = 'none';
+            }, 900);
         }
+    })
+    .catch(err => {
+        showCfMessage(err.message || 'Ошибка', 'var(--danger)');
+        restoreCfButtons();
     });
 }
 
